@@ -1,0 +1,37 @@
+/* Estilo provisório. O padrão visual será definido pela Pessoa 2 e aplicado pela Pessoa 4. */
+
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 640px;
+  margin: 40px auto;
+  padding: 0 16px;
+  color: #222;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.ok {
+  color: #1a7f37;
+  font-weight: 600;
+}
+
+.erro {
+  color: #c62828;
+  font-weight: 600;
+}
+
+button {
+  padding: 8px 16px;
+  cursor: pointer;
+}

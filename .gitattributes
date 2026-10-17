@@ -1,0 +1,9 @@
+# Padroniza quebras de linha (LF) para evitar problemas entre Windows, Linux e Docker
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary

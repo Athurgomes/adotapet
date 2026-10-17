@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdotaPet</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Página provisória da infraestrutura. Será substituída pela Pessoa 4. -->
+  <h1>AdotaPet</h1>
+  <p>Status dos microsserviços</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Serviço</th>
+        <th>API</th>
+        <th>Banco</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-servico="animais">
+        <td>Animais (3001)</td>
+        <td class="status-servico">...</td>
+        <td class="status-banco">...</td>
+      </tr>
+      <tr data-servico="adotantes">
+        <td>Adotantes (3002)</td>
+        <td class="status-servico">...</td>
+        <td class="status-banco">...</td>
+      </tr>
+      <tr data-servico="adocoes">
+        <td>Adoções (3003)</td>
+        <td class="status-servico">...</td>
+        <td class="status-banco">...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button id="atualizar">Atualizar</button>
+
+  <script src="js/config.js"></script>
+  <script src="js/status.js"></script>
+</body>
+</html>

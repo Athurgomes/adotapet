@@ -1,0 +1,72 @@
+# AdotaPet: frontend + 3 microsserviços, agrupados no projeto "projeto-adotapet".
+# Para subir tudo:  docker compose up --build
+# As connection strings do MongoDB Atlas ficam no arquivo .env (veja .env.example).
+
+name: projeto-adotapet
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5500:80"
+    volumes:
+      # Alterações nos arquivos do frontend aparecem ao recarregar a página
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - animais
+      - adotantes
+      - adocoes
+    restart: unless-stopped
+
+  animais:
+    build: ./services/animais
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_NAME: animais_db
+      MONGODB_URI: ${ANIMAIS_MONGODB_URI:?Defina ANIMAIS_MONGODB_URI no arquivo .env}
+    volumes:
+      # Reinicia o serviço automaticamente ao salvar um arquivo em src/
+      - ./services/animais/src:/app/src
+    command: ["node", "--watch", "src/server.js"]
+    healthcheck: &healthcheck
+      test: ["CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  adotantes:
+    build: ./services/adotantes
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DB_NAME: adotantes_db
+      MONGODB_URI: ${ADOTANTES_MONGODB_URI:?Defina ADOTANTES_MONGODB_URI no arquivo .env}
+    volumes:
+      - ./services/adotantes/src:/app/src
+    command: ["node", "--watch", "src/server.js"]
+    healthcheck: *healthcheck
+    restart: unless-stopped
+
+  adocoes:
+    build: ./services/adocoes
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DB_NAME: adocoes_db
+      MONGODB_URI: ${ADOCOES_MONGODB_URI:?Defina ADOCOES_MONGODB_URI no arquivo .env}
+      # Dentro da rede do Docker, cada serviço é encontrado pelo próprio nome
+      ANIMAIS_API_URL: http://animais:3001
+      ADOTANTES_API_URL: http://adotantes:3002
+    volumes:
+      - ./services/adocoes/src:/app/src
+    command: ["node", "--watch", "src/server.js"]
+    healthcheck: *healthcheck
+    depends_on:
+      - animais
+      - adotantes
+    restart: unless-stopped
