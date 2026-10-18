@@ -9,6 +9,8 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'adotantes_db';
 
 const app = express();
+
+// Habilita chamadas do navegador e leitura de corpos JSON.
 app.use(cors());
 app.use(express.json());
 
@@ -21,14 +23,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Monta as rotas de cadastro, listagem e consulta sob /adotantes.
 app.use('/adotantes', adotantesRoutes);
 
-// Rota não encontrada
+// Responde com 404 para caminhos que não pertencem à API.
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada.' });
 });
 
-// Erros não tratados
+// Evita expor detalhes internos do erro na resposta HTTP.
 app.use((erro, req, res, next) => {
   console.error(erro);
   res.status(500).json({ erro: 'Erro interno no servidor.' });
@@ -36,5 +39,6 @@ app.use((erro, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`[${SERVICO}] Rodando na porta ${PORT}`);
+  // Inicia a conexão do banco junto com o servidor HTTP.
   conectarBanco(MONGODB_URI, DB_NAME);
 });

@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
+// Intervalo entre novas tentativas quando o Atlas não está acessível.
 const TEMPO_ENTRE_TENTATIVAS_MS = 5000;
 
-// Conecta ao MongoDB Atlas. Se falhar, tenta de novo a cada 5 segundos,
-// sem derrubar o servidor (o /health mostra se o banco está conectado).
+// Conecta ao banco lógico do serviço e tenta novamente se a conexão falhar.
 async function conectarBanco(uri, dbName) {
   if (!uri) {
     console.error('[db] MONGODB_URI não definida. Confira o arquivo .env na raiz do projeto.');
@@ -11,6 +11,7 @@ async function conectarBanco(uri, dbName) {
   }
 
   try {
+    // O nome do banco vem da configuração do serviço (adotantes_db por padrão).
     await mongoose.connect(uri, { dbName });
     console.log(`[db] Conectado ao banco "${dbName}".`);
   } catch (erro) {
@@ -20,6 +21,7 @@ async function conectarBanco(uri, dbName) {
   }
 }
 
+// Informa se o Mongoose está conectado para a rota /health.
 function bancoConectado() {
   return mongoose.connection.readyState === 1;
 }
