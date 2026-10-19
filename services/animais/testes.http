@@ -1,0 +1,89 @@
+### Exemplos de chamadas do serviço de Animais (extensão "REST Client" do VS Code).
+### Contrato completo: docs/contrato-api.md
+### Com o container no ar (docker compose up), clique em "Send Request" acima de cada chamada.
+
+@url = http://localhost:3001
+
+### Saúde do serviço
+GET {{url}}/health
+
+### RF01 - Cadastrar um cachorro (caracteristicas livres)
+POST {{url}}/animais
+Content-Type: application/json
+
+{
+  "nome": "Caramelo",
+  "especie": "cachorro",
+  "sexo": "macho",
+  "idade": 3,
+  "porte": "medio",
+  "caracteristicas": {
+    "cor": "caramelo",
+    "pelagem": "curta",
+    "castrado": true,
+    "temperamento": ["dócil", "brincalhão"],
+    "convivenciaComCriancas": true
+  },
+  "vacinas": [
+    { "nome": "V10", "data": "2026-03-10" },
+    { "nome": "Antirrábica", "data": "2026-04-02" }
+  ],
+  "cidade": "Belo Horizonte",
+  "uf": "MG",
+  "imagemUrl": "https://exemplo.com/caramelo.jpg"
+}
+
+### RF01 - Cadastrar um gato (outras características)
+POST {{url}}/animais
+Content-Type: application/json
+
+{
+  "nome": "Mimi",
+  "especie": "gato",
+  "sexo": "femea",
+  "idade": 0,
+  "porte": "pequeno",
+  "caracteristicas": { "fiv": false, "hipoalergenico": true },
+  "cidade": "São Paulo",
+  "uf": "SP",
+  "imagemUrl": "https://exemplo.com/mimi.jpg"
+}
+
+### Erro 400 - campos obrigatórios faltando / valores inválidos
+POST {{url}}/animais
+Content-Type: application/json
+
+{ "nome": "Sem dados", "especie": "dragao", "idade": -1 }
+
+### RF02 - Listar todos
+GET {{url}}/animais
+
+### RF03 - Filtros combinados
+GET {{url}}/animais?especie=gato&uf=SP&disponivel=true
+
+### RF03 - Filtro por cidade (nome completo, sem diferenciar maiúsculas)
+GET {{url}}/animais?cidade=belo horizonte&porte=medio
+
+### Erro 400 - filtro inválido
+GET {{url}}/animais?especie=dragao&disponivel=talvez
+
+### RF04 - Consultar um animal (troque pelo _id de um animal cadastrado)
+GET {{url}}/animais/6710f1c2a1b2c3d4e5f60001
+
+### Erro 400 - id inválido
+GET {{url}}/animais/abc
+
+### Erro 404 - animal não encontrado
+GET {{url}}/animais/6710f1c2a1b2c3d4e5f6ffff
+
+### RF05 - Marcar como indisponível (troque pelo _id de um animal cadastrado)
+PATCH {{url}}/animais/6710f1c2a1b2c3d4e5f60001/disponibilidade
+Content-Type: application/json
+
+{ "disponivel": false }
+
+### Erro 400 - disponivel precisa ser booleano
+PATCH {{url}}/animais/6710f1c2a1b2c3d4e5f60001/disponibilidade
+Content-Type: application/json
+
+{ "disponivel": "false" }
