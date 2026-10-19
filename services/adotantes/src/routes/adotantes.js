@@ -39,9 +39,6 @@ function validarCadastro(corpo) {
   const detalhes = [];
   const camposTexto = [
     'nomeCompleto',
-    'profissao',
-    'endereco',
-    'cidade',
     'uf',
     'telefone',
     'email',
@@ -55,6 +52,13 @@ function validarCadastro(corpo) {
   for (const campo of camposTexto) {
     if (typeof corpo[campo] !== 'string' || !corpo[campo].trim()) {
       detalhes.push(`campo '${campo}' é obrigatório e deve ser texto`);
+    }
+  }
+
+  // Estes dados podem ser omitidos; quando enviados, devem ser texto.
+  for (const campo of ['profissao', 'endereco', 'cidade']) {
+    if (corpo[campo] != null && typeof corpo[campo] !== 'string') {
+      detalhes.push(`campo '${campo}' deve ser texto quando informado`);
     }
   }
 
