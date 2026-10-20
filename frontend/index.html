@@ -1,46 +1,425 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AdotaPet</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aumigo • AdotaPet</title>
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- Página provisória da infraestrutura. Será substituída pela Pessoa 4. -->
-  <h1>AdotaPet</h1>
-  <p>Status dos microsserviços</p>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Serviço</th>
-        <th>API</th>
-        <th>Banco</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr data-servico="animais">
-        <td>Animais (3001)</td>
-        <td class="status-servico">...</td>
-        <td class="status-banco">...</td>
-      </tr>
-      <tr data-servico="adotantes">
-        <td>Adotantes (3002)</td>
-        <td class="status-servico">...</td>
-        <td class="status-banco">...</td>
-      </tr>
-      <tr data-servico="adocoes">
-        <td>Adoções (3003)</td>
-        <td class="status-servico">...</td>
-        <td class="status-banco">...</td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- ==================== TELA INICIAL (HOME) ==================== -->
+  <div id="view-home">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container header-container">
+        <a href="#home" class="brand" aria-label="Aumigo início">
+          <span class="brand-badge">
+            <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </span>
+          <span class="brand-text">aumigo</span>
+        </a>
 
-  <button id="atualizar">Atualizar</button>
+        <nav class="nav-links desktop-only">
+          <a href="#pets">Conheça os pets</a>
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#sobre">Sobre nós</a>
+        </nav>
 
+        <div class="header-actions">
+          
+          <button class="btn btn-primary" onclick="navigateTo('adotar')">Quero adotar</button>
+          <button class="btn-icon mobile-only" id="btn-menu-toggle" aria-label="Menu">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Menu Mobile -->
+      <nav id="mobile-menu" class="mobile-menu hidden">
+        <a href="#pets" onclick="toggleMenu(false)">Quero adotar</a>
+        <a href="#como-funciona" onclick="toggleMenu(false)">Como funciona</a>
+        <a href="#sobre" onclick="toggleMenu(false)">Sobre nós</a>
+      </nav>
+    </header>
+
+    <main>
+
+      <!-- ==================== HERO SECTION ATUALIZADA ==================== -->
+      <section class="hero-section">
+        <div class="ambient-glow glow-left"></div>
+        <div class="container hero-grid">
+          <div class="hero-content">
+            <div class="tag-pill">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="m12 3-1.4 3.7L7 8.2l3.6 1.5L12 13.5l1.4-3.8L17 8.2l-3.6-1.5L12 3ZM5 15-.8 2.2L2 18l2.2.8L5 21l.8-2.2L8 18l-2.2-.8L5 15Z"/></svg>
+              Uma conexão para a vida
+            </div>
+            <h1 class="hero-title">
+              Tem um amor esperando <span class="highlight-wrapper">por você.
+                <svg class="curved-underline" viewBox="0 0 270 15" fill="none"><path d="M3 11C70 2 180 2 267 9" stroke="#f1a85b" stroke-width="6" stroke-linecap="round"/></svg>
+              </span>
+            </h1>
+            <p class="hero-desc">Encontre seu novo melhor amigo e transforme duas vidas com um gesto de carinho.</p>
+
+            <!-- NOVO CTA: Substitui a antiga barra de pesquisa e induz o usuário a rolar -->
+            <div class="hero-cta-wrapper">
+              <a href="#pets" class="btn btn-cta-scroll">
+                <span>Ver animais disponíveis para adoção</span>
+                <span class="icon-circle cta-circle-icon">
+                  <svg class="icon-sm" viewBox="0 0 24 24"><path d="m19 9-7 7-7-7"/></svg>
+                </span>
+              </a>
+            </div>
+
+            <div class="hero-badges">
+              <span class="check-badge">
+                <span class="icon-circle check-green"><svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+                Adoção responsável
+              </span>
+              <span class="check-badge">
+                <span class="icon-circle check-green"><svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+                100% gratuito
+              </span>
+            </div>
+          </div>
+
+          <!-- Hero Imagem / Card Destaque -->
+          <div class="hero-media-wrapper">
+            <div class="circle-decor circle-orange"></div>
+            <div class="circle-decor circle-lavender"></div>
+            <div class="hero-card-frame">
+              <img src="https://images.unsplash.com/photo-1573435567032-ff5982925350?crop=faces&fit=crop&fm=jpg&q=88&w=1200&h=1000" alt="Cachorro e gato juntos" class="hero-img" />
+              <div class="floating-story-card">
+                <span class="icon-circle story-icon">
+                  <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+                </span>
+                <div>
+                  <p class="story-title">+2.480 finais felizes</p>
+                  <p class="story-subtitle">e muitas histórias começando</p>
+                </div>
+              </div>
+            </div>
+            <div class="spark-badge">
+              <svg class="icon-lg text-primary" viewBox="0 0 24 24"><path d="m12 3-1.4 3.7L7 8.2l3.6 1.5L12 13.5l1.4-3.8L17 8.2l-3.6-1.5L12 3Z"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SEÇÃO CATÁLOGO DE ANIMAIS (RF03) ==================== -->
+      <section id="pets" class="pets-section">
+        <div class="container">
+          <!-- Cabeçalho com as Pílulas Mantidas -->
+          <div class="pets-header">
+            <div>
+              <p class="section-tag">Prontos para te conhecer</p>
+              <h2 class="section-title text-white">Conheça alguns aumigos</h2>
+            </div>
+            <div class="filter-pills" id="filter-container">
+              <button class="pill-btn active" data-filter="Todos">Todos</button>
+              <button class="pill-btn" data-filter="Cachorros">Cachorros</button>
+              <button class="pill-btn" data-filter="Gatos">Gatos</button>
+            </div>
+          </div>
+
+          <!-- NOVA BARRA DE FILTROS RF03: Região, Sexo e Porte -->
+          <div class="filter-bar-card">
+            <div class="filter-bar-grid">
+              <!-- Filtro por Região (Cidade ou UF) -->
+              <div class="filter-item filter-search">
+                <label for="filter-region" class="filter-label">Região ou Nome</label>
+                <div class="filter-input-wrap">
+                  <svg class="icon-sm filter-icon" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                  <input type="text" id="filter-region" placeholder="Ex: São Paulo, Campinas, SP..." />
+                </div>
+              </div>
+
+              <!-- Filtro por Sexo -->
+              <div class="filter-item">
+                <label for="filter-sexo" class="filter-label">Sexo</label>
+                <select id="filter-sexo" class="filter-select">
+                  <option value="todos">Todos os sexos</option>
+                  <option value="macho">Macho</option>
+                  <option value="femea">Fêmea</option>
+                </select>
+              </div>
+
+              <!-- Filtro por Porte -->
+              <div class="filter-item">
+                <label for="filter-porte" class="filter-label">Porte</label>
+                <select id="filter-porte" class="filter-select">
+                  <option value="todos">Todos os portes</option>
+                  <option value="pequeno">Pequeno</option>
+                  <option value="medio">Médio</option>
+                  <option value="grande">Grande</option>
+                </select>
+              </div>
+
+              <!-- Botão para Limpar Filtros -->
+              <div class="filter-actions">
+                <button type="button" id="btn-clear-filters" class="btn-clear" title="Restaurar todos os filtros">
+                  Limpar filtros
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid dos Cards de Animais -->
+          <div id="pets-grid" class="pets-grid">
+            <!-- Renderizado dinamicamente via app.js -->
+          </div>
+
+          <div id="no-pets-message" class="empty-state hidden">
+            Nenhum aumigo encontrado com esses filtros. Tente alterar as opções acima.
+          </div>
+
+          <!-- Botão Ver Mais / Ver Menos -->
+          <div id="load-more-container" class="load-more-wrapper hidden">
+            <button id="btn-toggle-pets" class="btn-load-more">
+              Ver mais
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção Como Funciona -->
+      <section id="como-funciona" class="steps-section">
+        <div class="container">
+          <div class="section-heading-center">
+            <p class="section-tag text-purple">Simples, seguro e cheio de afeto</p>
+            <h2 class="section-title text-purple-dark">Seu novo amigo está a 3 passos</h2>
+          </div>
+          <div class="steps-grid">
+            <article class="step-card">
+              <span class="step-num">01</span>
+              <span class="step-icon-bg">
+                <svg class="icon text-primary" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              </span>
+              <h3 class="step-title">Encontre</h3>
+              <p class="step-desc">Use os filtros e conheça os animais que combinam com a sua rotina.</p>
+            </article>
+
+            <article class="step-card">
+              <span class="step-num">02</span>
+              <span class="step-icon-bg">
+                <svg class="icon icon-filled text-primary" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+              </span>
+              <h3 class="step-title">Conecte-se</h3>
+              <p class="step-desc">Converse com o protetor e descubra tudo sobre o seu futuro amigo.</p>
+            </article>
+
+            <article class="step-card">
+              <span class="step-num">03</span>
+              <span class="step-icon-bg">
+                <svg class="icon text-primary" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+              </span>
+              <h3 class="step-title">Adote</h3>
+              <p class="step-desc">Passe pelo processo responsável e dê início a uma linda história.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção Sobre Nós -->
+      <section id="sobre" class="about-section">
+        <div class="container">
+          <div class="about-box">
+            <img src="https://images.unsplash.com/photo-1563460716037-460a3ad24ba9?crop=faces&fit=crop&fm=jpg&q=85&w=1100&h=800" alt="Cachorro e gato descansando juntos" class="about-img" />
+            <div class="about-body">
+              <p class="section-tag text-purple">Uma rede que cuida</p>
+              <h2 class="about-title">Adoção muda o mundo de quem adota também.</h2>
+              <p class="about-desc">
+                Conectamos protetores responsáveis a famílias prontas para amar. Cada perfil é verificado para que a jornada seja segura do primeiro contato ao primeiro carinho.
+              </p>
+              <button class="btn btn-primary" onclick="navigateTo('adotar')">
+                Quero fazer parte
+                <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <div class="brand">
+          <span class="brand-badge brand-badge-footer">
+            <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </span>
+          <span class="brand-text text-white">aumigo</span>
+        </div>
+        <p class="footer-note">Feito para aproximar histórias, lares e muitos rabinhos felizes.</p>
+        <p class="footer-copy">© 2026 AdotaPet / Aumigo</p>
+      </div>
+    </footer>
+  </div>
+
+
+  <!-- ==================== TELA DE ADOÇÃO (FORMULÁRIO) ==================== -->
+  <div id="view-adotar" class="hidden">
+    <div class="adopt-page">
+      <div class="ambient-glow glow-left-adopt"></div>
+      <div class="ambient-glow glow-right-adopt"></div>
+
+      <div class="container adopt-container">
+        <!-- Header da Página de Formulário -->
+        <header class="adopt-nav">
+          <a href="#home" class="brand" onclick="navigateTo('home')" aria-label="Aumigo início">
+            <span class="brand-badge">
+              <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+            </span>
+            <span class="brand-text">aumigo</span>
+          </a>
+          <button class="back-link" onclick="navigateTo('home')">
+            <svg class="icon-sm rotate-180" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            Voltar para início
+          </button>
+        </header>
+
+        <!-- Card Split do Formulário -->
+        <div class="form-modal-card">
+          <!-- Lado Esquerdo Informativo -->
+          <aside class="adopt-aside">
+            <div class="aside-content">
+              <span class="tag-pill tag-pill-translucent">Formulário de interesse</span>
+              <h1 class="aside-title">Vamos encontrar seu novo melhor amigo?</h1>
+              <p class="aside-desc">Conte um pouco sobre você. Leva menos de 3 minutos e nos ajuda a fazer uma conexão cheia de carinho.</p>
+
+              <div class="aside-checklist">
+                <div class="check-row">
+                  <span class="icon-circle check-white"><svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+                  <span>Seus dados ficam protegidos</span>
+                </div>
+                <div class="check-row">
+                  <span class="icon-circle check-white"><svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+                  <span>Entraremos em contato via WhatsApp / E-mail</span>
+                </div>
+                <div class="check-row">
+                  <span class="icon-circle check-white"><svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>
+                  <span>Sem compromisso ou cobrança (100% Gratuito)</span>
+                </div>
+              </div>
+            </div>
+            <svg class="watermark-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </aside>
+
+          <!-- Lado Direito: Formulário e Telas de Sucesso -->
+          <section class="adopt-form-section">
+            <div id="form-wrapper">
+              <div class="form-header-text">
+                <p class="form-badge-top">Seus dados</p>
+                <h2 class="form-heading">Fale um pouco sobre você</h2>
+                <p class="form-subheading">Todos os campos são importantes para conhecermos seu perfil de tutor responsável.</p>
+              </div>
+
+              <form id="adoption-form">
+                <div class="form-grid">
+                  <label class="field-label col-span-2">
+                    Nome completo
+                    <input type="text" class="custom-input" id="nomeCompleto" name="nomeCompleto" placeholder="Como podemos te chamar?" required />
+                  </label>
+
+                  <label class="field-label">
+                    Data de Nascimento (Idade mín. 21 anos)
+                    <input type="date" class="custom-input" id="dataNascimento" name="dataNascimento" required />
+                  </label>
+
+                  <label class="field-label">
+                    Profissão
+                    <input type="text" class="custom-input" id="profissao" name="profissao" placeholder="Sua ocupação" required />
+                  </label>
+
+                  <label class="field-label">
+                    E-mail
+                    <input type="email" class="custom-input" id="email" name="email" placeholder="voce@email.com" required />
+                  </label>
+
+                  <label class="field-label">
+                    WhatsApp / Telefone
+                    <input type="tel" class="custom-input" id="telefone" name="telefone" placeholder="(00) 00000-0000" required />
+                  </label>
+
+                  <label class="field-label col-span-2">
+                    Endereço completo (Rua, Bairro, Número)
+                    <input type="text" class="custom-input" id="endereco" name="endereco" placeholder="Ex: Rua das Flores, 123 - Centro" required />
+                  </label>
+
+                  <label class="field-label">
+                    Cidade
+                    <input type="text" class="custom-input" id="cidade" name="cidade" placeholder="Sua cidade" required />
+                  </label>
+
+                  <label class="field-label">
+                    UF (Estado)
+                    <input type="text" class="custom-input" id="uf" name="uf" maxlength="2" placeholder="Ex: SP, MG, RJ" style="text-transform: uppercase;" required />
+                  </label>
+
+                  <label class="field-label">
+                    Tipo de moradia
+                    <select class="custom-input" id="tipoMoradia" name="tipoMoradia" required>
+                      <option value="casa">Casa</option>
+                      <option value="apartamento">Apartamento</option>
+                      <option value="sitio">Chácara / Sítio</option>
+                    </select>
+                  </label>
+
+                  <label class="field-label">
+                    Animal de interesse
+                    <select class="custom-input" id="selectedPetId" name="selectedPetId" required>
+                      <option value="">Selecione um animal</option>
+                    </select>
+                  </label>
+
+                  <label class="field-label col-span-2">
+                    Por que você quer adotar? Conte sobre sua rotina e experiência:
+                    <textarea class="custom-input custom-textarea" id="motivoAdocao" name="motivoAdocao" placeholder="Conte brevemente sobre sua motivação, horários disponíveis e espaço em casa..." required></textarea>
+                  </label>
+                </div>
+
+                <div id="form-error-msg" class="error-banner hidden"></div>
+
+                <label class="checkbox-label">
+                  <input type="checkbox" id="lgpd-consent" required />
+                  <span>Concordo em receber contato da equipe Aumigo / AdotaPet e confirmo que meus dados são verdadeiros.</span>
+                </label>
+
+                <button type="submit" class="btn btn-submit">
+                  <span>Enviar solicitação de adoção</span>
+                  <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </form>
+            </div>
+
+            <!-- Estado de Sucesso pós-envio -->
+            <div id="form-success-wrapper" class="success-screen hidden">
+              <span class="success-icon-bg">
+                <svg class="icon-xl text-primary" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+              </span>
+              <h2 class="success-title">Formulário enviado!</h2>
+              <p class="success-desc">
+                Recebemos sua solicitação com status <strong>"Pendente"</strong>. Nossa equipe e os protetores entrarão em contato em breve para conversar sobre a adoção.
+              </p>
+              <div class="success-actions">
+                <button class="btn btn-outline" onclick="navigateTo('home')">Voltar ao início</button>
+                <button class="btn btn-primary" onclick="resetFormState()">Enviar outra resposta</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <p class="footer-subtext">Aumigo • Conectando pessoas e animais com responsabilidade</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
   <script src="js/config.js"></script>
-  <script src="js/status.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
