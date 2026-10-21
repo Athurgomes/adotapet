@@ -48,7 +48,7 @@ O serviço de Adoções também retorna `"dependencias": { "animais": "no ar", "
 
 ---
 
-## 1. Microsserviço de Animais — porta 3001 — banco `animais_db`
+## 1. Microsserviço de Animais — porta 3001 — banco `animais_db` (✅ implementado)
 
 **Coleção:** `animais`
 
@@ -105,15 +105,92 @@ O serviço de Adoções também retorna `"dependencias": { "animais": "no ar", "
 | `GET` | `/animais/:id` | Consultar um animal (RF04) | 200 + documento | 400, 404 |
 | `PATCH` | `/animais/:id/disponibilidade` | Atualizar disponibilidade (RF05) | 200 + documento atualizado | 400, 404 |
 
-**Filtros de `GET /animais`** (query string, todos opcionais e combináveis):
-`especie`, `sexo`, `porte`, `cidade`, `uf`, `disponivel` (`true`/`false`).
+### Detalhes de implementação
 
-Exemplo: `GET /animais?especie=gato&uf=SP&disponivel=true`
+- `especie`, `sexo` e `porte` são normalizados para minúsculas; `uf` para maiúsculas; textos têm espaços das pontas removidos.
+- `_id`, `criadoEm` e `atualizadoEm` são gerados pelo serviço: se vierem no corpo do `POST`, são ignorados.
+- `imagemUrl` precisa começar com `http://` ou `https://`. `caracteristicas` precisa ser um objeto (o conteúdo é livre).
+- Sem conexão com o banco, todas as rotas respondem `503`.
+- A listagem vem ordenada do mais recente para o mais antigo (`criadoEm` decrescente).
 
-**Corpo de `PATCH /animais/:id/disponibilidade`:**
+### `POST /animais` (RF01)
+
+Corpo (os campos `caracteristicas`, `vacinas` e `disponivel` são opcionais):
+```json
+{
+  "nome": "Mimi",
+  "especie": "gato",
+  "sexo": "femea",
+  "idade": 0,
+  "porte": "pequeno",
+  "caracteristicas": { "fiv": false, "hipoalergenico": true },
+  "vacinas": [{ "nome": "V4", "data": "2026-09-01" }],
+  "cidade": "São Paulo",
+  "uf": "sp",
+  "imagemUrl": "https://exemplo.com/mimi.jpg"
+}
+```
+`201` + documento criado (com `_id`, `disponivel: true`, `criadoEm`, `atualizadoEm` e `uf: "SP"`).
+
+`400` (campos faltando ou inválidos):
+```json
+{
+  "erro": "Dados inválidos.",
+  "detalhes": ["O campo 'especie' deve ser: cachorro, gato ou outro.", "O campo 'idade' não pode ser negativo."]
+}
+```
+
+### `GET /animais` (RF02, RF03)
+
+Filtros (query string, todos opcionais e combináveis; parâmetro vazio é ignorado):
+
+| Filtro | Valores | Observação |
+|---|---|---|
+| `especie` | `cachorro`, `gato`, `outro` | |
+| `sexo` | `macho`, `femea` | |
+| `porte` | `pequeno`, `medio`, `grande` | |
+| `cidade` | texto | Nome **completo**, sem diferenciar maiúsculas de minúsculas (acentos contam) |
+| `uf` | 2 letras | Sem diferenciar maiúsculas de minúsculas |
+| `disponivel` | `true`, `false` | |
+
+Exemplo: `GET /animais?especie=gato&uf=SP&disponivel=true` → `200` + array (vazio `[]` se nada combinar).
+
+Valor inválido em `especie`, `sexo`, `porte` ou `disponivel` → `400`:
+```json
+{ "erro": "Dados inválidos.", "detalhes": ["O filtro 'porte' deve ser: pequeno, medio, grande."] }
+```
+
+### `GET /animais/:id` (RF04)
+
+`200` + documento (formato da seção "Documento"). Erros:
+
+| Código | Corpo |
+|---|---|
+| 400 | `{ "erro": "ID inválido." }` |
+| 404 | `{ "erro": "Animal não encontrado." }` |
+
+### `PATCH /animais/:id/disponibilidade` (RF05)
+
+Corpo (`disponivel` é obrigatório e precisa ser booleano de verdade: `"false"` ou `0` são rejeitados):
 ```json
 { "disponivel": false }
 ```
+`200` + documento atualizado. Erros:
+
+| Código | Quando | Corpo |
+|---|---|---|
+| 400 | `id` inválido | `{ "erro": "ID inválido." }` |
+| 400 | `disponivel` ausente ou não booleano | `{ "erro": "Dados inválidos.", "detalhes": ["O campo 'disponivel' é obrigatório e deve ser true ou false."] }` |
+| 404 | animal não existe | `{ "erro": "Animal não encontrado." }` |
+
+### Outros erros (todas as rotas de `/animais`)
+
+| Código | Quando | Corpo |
+|---|---|---|
+| 400 | JSON malformado no corpo | `{ "erro": "JSON inválido no corpo da requisição." }` |
+| 503 | Serviço sem conexão com o banco | `{ "erro": "Banco de dados indisponível." }` |
+
+Exemplos prontos para executar: [`services/animais/testes.http`](../services/animais/testes.http).
 
 ---
 
