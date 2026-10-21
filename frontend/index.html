@@ -255,7 +255,7 @@
           <span class="brand-text text-white">aumigo</span>
         </div>
         <p class="footer-note">Feito para aproximar histórias, lares e muitos rabinhos felizes.</p>
-        <p class="footer-copy">© 2026 AdotaPet / Aumigo</p>
+        <p class="footer-copy">© 2026 AdotaPet / Aumigo • <a href="/admin" style="color: inherit; text-decoration: underline; opacity: 0.85;">Painel Administrativo</a></p>
       </div>
     </footer>
   </div>
@@ -370,6 +370,40 @@
                   </label>
 
                   <label class="field-label">
+                    Possui quintal?
+                    <select class="custom-input" id="possuiQuintal" name="possuiQuintal" required>
+                      <option value="true">Sim</option>
+                      <option value="false">Não</option>
+                    </select>
+                  </label>
+
+                  <label class="field-label">
+                    Moradia própria?
+                    <select class="custom-input" id="moradiaPropria" name="moradiaPropria" required>
+                      <option value="true">Sim</option>
+                      <option value="false">Não</option>
+                    </select>
+                  </label>
+
+                  <label class="field-label">
+                    Já teve animais antes?
+                    <select class="custom-input" id="jaTeveAnimais" name="jaTeveAnimais" required>
+                      <option value="true">Sim</option>
+                      <option value="false">Não</option>
+                    </select>
+                  </label>
+
+                  <label class="field-label">
+                    Outros animais em casa
+                    <input type="number" class="custom-input" id="outrosAnimaisEmCasa" name="outrosAnimaisEmCasa" min="0" value="0" required />
+                  </label>
+
+                  <label class="field-label">
+                    Horas disponíveis por dia
+                    <input type="number" class="custom-input" id="horasDisponiveisPorDia" name="horasDisponiveisPorDia" min="0" max="24" value="4" required />
+                  </label>
+
+                  <label class="field-label col-span-2">
                     Animal de interesse
                     <select class="custom-input" id="selectedPetId" name="selectedPetId" required>
                       <option value="">Selecione um animal</option>

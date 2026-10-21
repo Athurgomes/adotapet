@@ -29,9 +29,9 @@ services:
     volumes:
       # Reinicia o serviço automaticamente ao salvar um arquivo em src/
       - ./services/animais/src:/app/src
-    command: ["node", "--watch", "src/server.js"]
+    command: [ "node", "--watch", "src/server.js" ]
     healthcheck: &healthcheck
-      test: ["CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1" ]
       interval: 15s
       timeout: 3s
       retries: 3
@@ -47,7 +47,7 @@ services:
       MONGODB_URI: ${ADOTANTES_MONGODB_URI:?Defina ADOTANTES_MONGODB_URI no arquivo .env}
     volumes:
       - ./services/adotantes/src:/app/src
-    command: ["node", "--watch", "src/server.js"]
+    command: [ "node", "--watch", "src/server.js" ]
     healthcheck: *healthcheck
     restart: unless-stopped
 
@@ -64,7 +64,7 @@ services:
       ADOTANTES_API_URL: http://adotantes:3002
     volumes:
       - ./services/adocoes/src:/app/src
-    command: ["node", "--watch", "src/server.js"]
+    command: [ "node", "--watch", "src/server.js" ]
     healthcheck: *healthcheck
     depends_on:
       - animais

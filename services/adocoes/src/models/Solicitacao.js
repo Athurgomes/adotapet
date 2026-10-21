@@ -6,7 +6,7 @@ const solicitacaoSchema = new mongoose.Schema(
     adotanteId: { type: String, required: true },
     status: {
       type: String,
-      enum: ['Pendente'],
+      enum: ['Pendente', 'Em contato', 'Concluído'],
       default: 'Pendente',
       required: true,
     },

@@ -356,33 +356,71 @@ function setupAdoptionForm() {
       email: document.getElementById("email").value.trim(),
       questionario: {
         tipoMoradia: document.getElementById("tipoMoradia").value,
-        motivoAdocao: document.getElementById("motivoAdocao").value.trim(),
-        jaTeveAnimais: true
+        possuiQuintal: document.getElementById("possuiQuintal").value === "true",
+        moradiaPropria: document.getElementById("moradiaPropria").value === "true",
+        jaTeveAnimais: document.getElementById("jaTeveAnimais").value === "true",
+        outrosAnimaisEmCasa: parseInt(document.getElementById("outrosAnimaisEmCasa").value, 10) || 0,
+        horasDisponiveisPorDia: parseFloat(document.getElementById("horasDisponiveisPorDia").value) || 0,
+        motivoAdocao: document.getElementById("motivoAdocao").value.trim()
       }
     };
 
     try {
-      let adotanteId = "mock_adotante_" + Date.now();
+      let adotanteId = null;
+
       try {
         const respAdotante = await fetch(`${CONFIG.API_ADOTANTES}/adotantes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(adotantePayload)
         });
+
         if (respAdotante.ok) {
           const jsonAdotante = await respAdotante.json();
           adotanteId = jsonAdotante._id;
+        } else if (respAdotante.status === 409) {
+          // Se o e-mail já existe, busca o adotante para vincular à nova solicitação
+          const listResp = await fetch(`${CONFIG.API_ADOTANTES}/adotantes`);
+          if (listResp.ok) {
+            const list = await listResp.json();
+            const existing = list.find(a => a.email.toLowerCase() === adotantePayload.email.toLowerCase());
+            if (existing) adotanteId = existing._id;
+          }
+          if (!adotanteId) {
+            const errData = await respAdotante.json().catch(() => ({}));
+            errorBox.textContent = errData.erro || "Já existe um cadastro com este e-mail.";
+            errorBox.classList.remove("hidden");
+            return;
+          }
+        } else {
+          const errData = await respAdotante.json().catch(() => ({}));
+          const details = errData.detalhes ? `: ${errData.detalhes.join(", ")}` : "";
+          errorBox.textContent = (errData.erro || "Erro ao cadastrar adotante") + details;
+          errorBox.classList.remove("hidden");
+          return;
         }
       } catch (err) {
         console.warn("Serviço de adotantes offline. Prosseguindo em modo demonstração.");
+        adotanteId = "mock_adotante_" + Date.now();
+      }
+
+      if (!adotanteId) {
+        adotanteId = "mock_adotante_" + Date.now();
       }
 
       try {
-        await fetch(`${CONFIG.API_ADOCOES}/adocoes`, {
+        const respAdocao = await fetch(`${CONFIG.API_ADOCOES}/adocoes`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ animalId: petId, adotanteId: adotanteId })
         });
+
+        if (!respAdocao.ok && respAdocao.status !== 503) {
+          const errAdocao = await respAdocao.json().catch(() => ({}));
+          errorBox.textContent = errAdocao.erro || "Erro ao registrar solicitação de adoção.";
+          errorBox.classList.remove("hidden");
+          return;
+        }
       } catch (err) {
         console.warn("Serviço de adoções offline. Registrado localmente.");
       }
