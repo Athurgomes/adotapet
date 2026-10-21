@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aumigo • Painel Administrativo</title>
+  <link rel="icon" type="image/png" sizes="16x16" href="../img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+
+  <!-- ==================== VIEW 1: TELA DE LOGIN ==================== -->
+  <div id="view-admin-login" class="login-screen">
+    <div class="login-container">
+      <div class="login-brand-header">
+        <a href="/" class="brand-link" aria-label="Aumigo início">
+          <span class="brand-badge">
+            <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </span>
+          <span>aumigo</span>
+        </a>
+      </div>
+
+      <div class="login-split-card">
+        <!-- Lado Esquerdo Institucional -->
+        <div class="login-banner-left">
+          <span class="login-badge-pill">Espaço administrativo</span>
+          <h1 class="login-banner-title">Todo cuidado começa com carinho. 💜</h1>
+          <p class="login-banner-desc">
+            Organize os perfis dos animais, acompanhe os adotantes e ajude cada aumigo a encontrar um lar.
+          </p>
+          <div class="login-banner-footer">
+            🐾 Um lugar especial para quem transforma vidas.
+          </div>
+        </div>
+
+        <!-- Lado Direito: Formulário de Acesso -->
+        <div class="login-form-right">
+          <div class="login-lock-badge">🔐</div>
+          <h2 class="login-heading">Boas-vindas de volta!</h2>
+          <p class="login-subheading">Entre com seus dados para acessar o painel.</p>
+
+          <form id="form-admin-login" class="login-form">
+            <div class="login-field">
+              <label for="admin-email" class="login-label">E-mail</label>
+              <input
+                id="admin-email"
+                type="email"
+                autocomplete="username"
+                required
+                placeholder="seu@email.com"
+                class="login-input"
+              />
+            </div>
+
+            <div class="login-field">
+              <label for="admin-password" class="login-label">Senha</label>
+              <div class="password-wrapper">
+                <input
+                  id="admin-password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  placeholder="Digite sua senha"
+                  class="login-input"
+                  style="padding-right: 76px;"
+                />
+                <button type="button" id="btn-toggle-password" class="password-toggle-btn">
+                  Mostrar
+                </button>
+              </div>
+            </div>
+
+            <div id="login-error-msg" class="login-error-alert hidden" role="alert"></div>
+
+            <button type="submit" class="btn-3d btn-primary-3d" style="width: 100%; padding: 14px 20px; font-size: 15px;">
+              Entrar no painel →
+            </button>
+          </form>
+
+          <div class="demo-credentials-box">
+            <strong>Modo demonstração:</strong> admin@aumigo.com / AumigoDemo2026! — credenciais para teste local.
+          </div>
+
+          <a href="/" class="back-to-site-link">← Voltar ao site público</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== VIEW 2: SHELL ADMINISTRATIVO ==================== -->
+  <div id="view-admin-shell" class="admin-shell hidden">
+    <!-- Backdrop Mobile -->
+    <div id="mobile-backdrop" class="mobile-backdrop hidden" aria-hidden="true"></div>
+
+    <!-- Barra Lateral (Sidebar) -->
+    <aside id="admin-sidebar" class="admin-sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="brand-link" style="color: #ffffff;" aria-label="Aumigo início">
+          <span class="brand-badge" style="background-color: #8f7be8;">
+            <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </span>
+          <span>aumigo</span>
+        </a>
+        <button type="button" id="btn-close-mobile-menu" class="sidebar-close-btn" aria-label="Fechar menu">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="sidebar-nav-section">
+        <p class="sidebar-nav-title">Administração</p>
+        <ul class="sidebar-nav-list">
+          <li>
+            <button type="button" id="nav-item-animais" class="sidebar-nav-link active">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3c0 .4.1.8.2 1.1A4.5 4.5 0 0 0 5 10.5C5 13 7 15 9.5 15c.6 0 1.2-.1 1.7-.3.5.8 1.4 1.3 2.3 1.3s1.8-.5 2.3-1.3c.5.2 1.1.3 1.7.3 2.5 0 4.5-2 4.5-4.5 0-2-1.3-3.7-3.2-4.4.1-.3.2-.7.2-1.1a3 3 0 0 0-3-3c-.9 0-1.7.4-2.2 1-.5-.6-1.3-1-2.2-1Z"/><path d="m9 19 3 3 3-3"/></svg>
+              <span>Cadastro de animais</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" id="nav-item-historico" class="sidebar-nav-link">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Adotantes</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <button type="button" id="btn-logout-admin" class="sidebar-logout-btn">
+        Sair da administração →
+      </button>
+
+      <div class="sidebar-footer-card">
+        <span class="sidebar-footer-icon">
+          <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+        </span>
+        <p class="sidebar-footer-title">Cuidar também é organizar.</p>
+        <p class="sidebar-footer-text">Mantenha os perfis e pedidos de adoção sempre atualizados.</p>
+        <a href="/" class="sidebar-footer-link">
+          Ver site público
+          <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Área de Conteúdo -->
+    <div style="min-width: 0; display: flex; flex-direction: column;">
+      <!-- Header Mobile -->
+      <header class="admin-mobile-header">
+        <button type="button" id="btn-open-mobile-menu" class="mobile-menu-btn" aria-label="Abrir menu">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="mobile-header-title">Aumigo Administração</span>
+      </header>
+
+      <!-- Conteúdo das Abas -->
+      <main class="admin-main-content">
+
+        <!-- ==================== ABA 1: CADASTRO DE ANIMAIS ==================== -->
+        <div id="tab-animais-content">
+          <!-- Cabeçalho -->
+          <div class="page-header-flex">
+            <div>
+              <p class="page-subtitle-badge">Painel administrativo</p>
+              <h1 class="page-main-title">Cadastro de animais</h1>
+              <p class="page-description">
+                Cadastre novos aumigos e acompanhe quem está disponível para adoção.
+              </p>
+            </div>
+            <div class="header-stats-group">
+              <div class="stat-pill-card">
+                <p class="stat-pill-label">Cadastrados</p>
+                <p id="stats-total-animals" class="stat-pill-value">0</p>
+              </div>
+              <div class="stat-pill-card highlight">
+                <p class="stat-pill-label">Disponíveis</p>
+                <p id="stats-available-animals" class="stat-pill-value">0</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner de Notificação -->
+          <div id="admin-notice-banner" class="notice-banner hidden" role="status">
+            <span class="notice-icon-circle">
+              <svg class="icon-xs" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+            </span>
+            <span id="admin-notice-text">Animal atualizado com sucesso.</span>
+          </div>
+
+          <!-- Formulário: Novo Animal -->
+          <section class="admin-card-section">
+            <div class="card-section-header">
+              <span class="header-icon-box">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+              <div>
+                <h2 class="section-title">Novo animal</h2>
+                <p class="section-subtitle">Preencha os dados que aparecerão no site</p>
+              </div>
+            </div>
+
+            <form id="form-new-animal">
+              <div class="admin-form-grid">
+                <label class="form-label-bold col-span-2">
+                  Nome do animal
+                  <input type="text" class="admin-input" id="animal-nome" placeholder="Ex.: Amora" required />
+                </label>
+
+                <label class="form-label-bold">
+                  Espécie
+                  <select class="admin-input" id="animal-especie" required>
+                    <option value="">Selecione</option>
+                    <option value="cachorro">Cachorro</option>
+                    <option value="gato">Gato</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </label>
+
+                <label class="form-label-bold">
+                  Sexo
+                  <select class="admin-input" id="animal-sexo" required>
+                    <option value="">Selecione</option>
+                    <option value="femea">Fêmea</option>
+                    <option value="macho">Macho</option>
+                  </select>
+                </label>
+
+                <label class="form-label-bold">
+                  Idade (em anos)
+                  <input type="number" class="admin-input" id="animal-idade" min="0" placeholder="Ex.: 2" required />
+                </label>
+
+                <label class="form-label-bold">
+                  Porte
+                  <select class="admin-input" id="animal-porte" required>
+                    <option value="">Selecione</option>
+                    <option value="pequeno">Pequeno</option>
+                    <option value="medio">Médio</option>
+                    <option value="grande">Grande</option>
+                  </select>
+                </label>
+
+                <label class="form-label-bold">
+                  Características
+                  <input type="text" class="admin-input" id="animal-caracteristicas" placeholder="Dócil e brincalhão" required />
+                </label>
+
+                <label class="form-label-bold">
+                  Vacinas
+                  <input type="text" class="admin-input" id="animal-vacinas" placeholder="Em dia (V10, Antirrábica)" required />
+                </label>
+
+                <label class="form-label-bold col-span-2">
+                  Cidade
+                  <input type="text" class="admin-input" id="animal-cidade" placeholder="Cidade" required />
+                </label>
+
+                <label class="form-label-bold">
+                  UF
+                  <input type="text" class="admin-input" id="animal-uf" maxlength="2" placeholder="SP" style="text-transform: uppercase;" required />
+                </label>
+
+                <label class="form-label-bold">
+                  Disponível?
+                  <select class="admin-input" id="animal-disponivel" required>
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                  </select>
+                </label>
+
+                <label class="form-label-bold col-span-4">
+                  URL da imagem do animal
+                  <input type="url" class="admin-input" id="animal-imagem" placeholder="https://... (opcional)" />
+                </label>
+              </div>
+
+              <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn-3d btn-primary-3d">
+                  <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                  Cadastrar animal
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Tabela: Animais Cadastrados -->
+          <section style="margin-top: 36px;">
+            <div style="margin-bottom: 16px;">
+              <h2 class="section-title">Animais cadastrados</h2>
+              <p class="section-subtitle">Gerencie os perfis e controle a visibilidade na vitrine pública</p>
+            </div>
+
+            <div class="table-card-wrapper">
+              <div class="table-scroll-container">
+                <table class="admin-data-table">
+                  <thead>
+                    <tr>
+                      <th>Animal</th>
+                      <th>Espécie</th>
+                      <th>Perfil</th>
+                      <th>Localização</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-animals-body">
+                    <!-- Gerado dinamicamente via JS -->
+                  </tbody>
+                </table>
+              </div>
+              <div id="empty-animals-state" class="hidden" style="padding: 48px 24px; text-align: center; color: var(--color-text-light); font-weight: 700; font-size: 14px;">
+                Nenhum animal cadastrado no momento.
+              </div>
+            </div>
+          </section>
+        </div>
+
+
+        <!-- ==================== ABA 2: ADOTANTES & SOLICITAÇÕES ==================== -->
+        <div id="tab-historico-content" class="hidden">
+          <!-- Cabeçalho -->
+          <div class="page-header-flex">
+            <div>
+              <p class="page-subtitle-badge">Painel administrativo</p>
+              <h1 class="page-main-title">Adotantes</h1>
+              <p class="page-description">
+                Consulte as pessoas que preencheram o formulário e acompanhe cada solicitação de adoção.
+              </p>
+            </div>
+          </div>
+
+          <!-- Cards de Métricas -->
+          <div class="history-stats-grid">
+            <article class="metric-card-box">
+              <span class="metric-icon-box metric-purple">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <div>
+                <p class="metric-label">Total de pedidos</p>
+                <p id="stats-total-requests" class="metric-number">0</p>
+              </div>
+            </article>
+
+            <article class="metric-card-box">
+              <span class="metric-icon-box metric-amber">
+                <svg class="icon" viewBox="0 0 24 24"><path d="m12 3-1.4 3.7L7 8.2l3.6 1.5L12 13.5l1.4-3.8L17 8.2l-3.6-1.5L12 3ZM5 15-.8 2.2L2 18l2.2.8L5 21l.8-2.2L8 18l-2.2-.8L5 15Z"/></svg>
+              </span>
+              <div>
+                <p class="metric-label">Novos esta semana</p>
+                <p id="stats-new-requests" class="metric-number">0</p>
+              </div>
+            </article>
+
+            <article class="metric-card-box">
+              <span class="metric-icon-box metric-green">
+                <svg class="icon icon-filled" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+              </span>
+              <div>
+                <p class="metric-label">Adoções concluídas</p>
+                <p id="stats-done-requests" class="metric-number">0</p>
+              </div>
+            </article>
+          </div>
+
+          <!-- Tabela de Solicitações -->
+          <section class="table-card-wrapper" style="margin-top: 32px;">
+            <!-- Barra de Busca -->
+            <div class="table-toolbar">
+              <div>
+                <h2 class="section-title">Solicitações recebidas</h2>
+                <p class="section-subtitle">Dados enviados pelo formulário de adoção</p>
+              </div>
+              <label class="search-input-box">
+                <svg class="icon-sm" style="color: var(--color-primary);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input
+                  type="text"
+                  id="input-search-requests"
+                  class="search-native-input"
+                  placeholder="Buscar nome, e-mail ou pet"
+                  aria-label="Buscar solicitações"
+                />
+              </label>
+            </div>
+
+            <!-- Filtros de Status -->
+            <div id="filter-pills-requests" class="filter-pills-bar">
+              <button type="button" class="filter-pill-btn active" data-status="Todos">Todos</button>
+              <button type="button" class="filter-pill-btn" data-status="Novo">Novo</button>
+              <button type="button" class="filter-pill-btn" data-status="Em contato">Em contato</button>
+              <button type="button" class="filter-pill-btn" data-status="Concluído">Concluído</button>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-scroll-container">
+              <table class="admin-data-table">
+                <thead>
+                  <tr>
+                    <th>Candidato</th>
+                    <th>Contato</th>
+                    <th>Cidade</th>
+                    <th>Interesse</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="table-requests-body">
+                  <!-- Gerado dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+            <div id="empty-requests-state" class="hidden" style="padding: 48px 24px; text-align: center; color: var(--color-text-light); font-weight: 700; font-size: 14px;">
+              Nenhuma solicitação encontrada para os filtros atuais.
+            </div>
+          </section>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ==================== MODAL: EDIÇÃO DE ANIMAL ==================== -->
+  <div id="modal-edit-animal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="section-title">Editar informações do animal</h3>
+        <button type="button" id="btn-close-edit-modal" class="sidebar-close-btn" style="background-color: #f3eff9; color: #40327f;" aria-label="Fechar">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="form-edit-animal">
+        <div class="admin-form-grid" style="margin-top: 10px;">
+          <label class="form-label-bold col-span-2">
+            Nome do animal
+            <input type="text" class="admin-input" id="edit-animal-nome" required />
+          </label>
+
+          <label class="form-label-bold">
+            Espécie
+            <select class="admin-input" id="edit-animal-especie" required>
+              <option value="cachorro">Cachorro</option>
+              <option value="gato">Gato</option>
+              <option value="outro">Outro</option>
+            </select>
+          </label>
+
+          <label class="form-label-bold">
+            Sexo
+            <select class="admin-input" id="edit-animal-sexo" required>
+              <option value="femea">Fêmea</option>
+              <option value="macho">Macho</option>
+            </select>
+          </label>
+
+          <label class="form-label-bold">
+            Idade (em anos)
+            <input type="number" class="admin-input" id="edit-animal-idade" min="0" required />
+          </label>
+
+          <label class="form-label-bold">
+            Porte
+            <select class="admin-input" id="edit-animal-porte" required>
+              <option value="pequeno">Pequeno</option>
+              <option value="medio">Médio</option>
+              <option value="grande">Grande</option>
+            </select>
+          </label>
+
+          <label class="form-label-bold">
+            Características
+            <input type="text" class="admin-input" id="edit-animal-caracteristicas" required />
+          </label>
+
+          <label class="form-label-bold">
+            Vacinas
+            <input type="text" class="admin-input" id="edit-animal-vacinas" required />
+          </label>
+
+          <label class="form-label-bold col-span-2">
+            Cidade
+            <input type="text" class="admin-input" id="edit-animal-cidade" required />
+          </label>
+
+          <label class="form-label-bold">
+            UF
+            <input type="text" class="admin-input" id="edit-animal-uf" maxlength="2" style="text-transform: uppercase;" required />
+          </label>
+
+          <label class="form-label-bold">
+            Disponível para adoção?
+            <select class="admin-input" id="edit-animal-disponivel" required>
+              <option value="true">Sim (Visível no site)</option>
+              <option value="false">Não (Ocultar da vitrine)</option>
+            </select>
+          </label>
+
+          <label class="form-label-bold col-span-4">
+            URL da imagem do animal
+            <input type="url" class="admin-input" id="edit-animal-imagem" required />
+          </label>
+        </div>
+
+        <div style="margin-top: 28px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" id="btn-cancel-edit-modal" class="btn-secondary">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-3d btn-primary-3d">
+            Salvar alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/config.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

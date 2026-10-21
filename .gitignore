@@ -17,3 +17,12 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# App Build
+app_build/
+
+# Agents
+.agents/
+
+# Production Artifacts
+production_artifacts/

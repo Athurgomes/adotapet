@@ -160,7 +160,8 @@ router.get('/', async (req, res, next) => {
   }
 
   if (req.query.status !== undefined) {
-    if (req.query.status !== STATUS_PENDENTE) {
+    const STATUS_PERMITIDOS = ['Pendente', 'Em contato', 'Concluído'];
+    if (!STATUS_PERMITIDOS.includes(req.query.status)) {
       return responderErro(res, 400, "Filtro 'status' inválido.");
     }
     filtro.status = req.query.status;
@@ -168,6 +169,37 @@ router.get('/', async (req, res, next) => {
 
   try {
     return res.json(await Solicitacao.find(filtro));
+  } catch (erro) {
+    return next(erro);
+  }
+});
+
+// Atualizar status da solicitação ('Pendente' <-> 'Em contato' <-> 'Concluído')
+router.patch('/:id/status', async (req, res, next) => {
+  if (!ID_VALIDO.test(req.params.id)) {
+    return responderErro(res, 400, 'Id inválido.');
+  }
+
+  const { status } = req.body || {};
+  const STATUS_PERMITIDOS = ['Pendente', 'Em contato', 'Concluído'];
+  if (!STATUS_PERMITIDOS.includes(status)) {
+    return responderErro(
+      res,
+      400,
+      `Status inválido. Deve ser: ${STATUS_PERMITIDOS.join(', ')}.`
+    );
+  }
+
+  try {
+    const solicitacao = await Solicitacao.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+    if (!solicitacao) {
+      return responderErro(res, 404, 'Solicitação não encontrada.');
+    }
+    return res.json(solicitacao);
   } catch (erro) {
     return next(erro);
   }
