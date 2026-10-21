@@ -9,6 +9,7 @@ services:
     build: ./frontend
     ports:
       - "5500:80"
+      - "80:80"
     volumes:
       # Alterações nos arquivos do frontend aparecem ao recarregar a página
       - ./frontend:/usr/share/nginx/html:ro
