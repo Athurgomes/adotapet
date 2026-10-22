@@ -655,6 +655,16 @@ button, input, select, textarea {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.notice-banner.notice-error {
+  border-color: rgba(185, 28, 28, 0.2);
+  background-color: #fdecec;
+  color: #9b1c1c;
+}
+
+.notice-banner.notice-error .notice-icon-circle {
+  display: none;
+}
+
 .notice-icon-circle {
   width: 24px;
   height: 24px;

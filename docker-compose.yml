@@ -9,7 +9,6 @@ services:
     build: ./frontend
     ports:
       - "5500:80"
-      - "80:80"
     volumes:
       # Alterações nos arquivos do frontend aparecem ao recarregar a página
       - ./frontend:/usr/share/nginx/html:ro
@@ -25,6 +24,8 @@ services:
       - "3001:3001"
     environment:
       PORT: 3001
+      # Datas (ex.: idade mínima de 21 anos) no horário de Brasília, não em UTC
+      TZ: America/Sao_Paulo
       DB_NAME: animais_db
       MONGODB_URI: ${ANIMAIS_MONGODB_URI:?Defina ANIMAIS_MONGODB_URI no arquivo .env}
     volumes:
@@ -44,6 +45,8 @@ services:
       - "3002:3002"
     environment:
       PORT: 3002
+      # Datas (ex.: idade mínima de 21 anos) no horário de Brasília, não em UTC
+      TZ: America/Sao_Paulo
       DB_NAME: adotantes_db
       MONGODB_URI: ${ADOTANTES_MONGODB_URI:?Defina ADOTANTES_MONGODB_URI no arquivo .env}
     volumes:
@@ -58,6 +61,8 @@ services:
       - "3003:3003"
     environment:
       PORT: 3003
+      # Datas (ex.: idade mínima de 21 anos) no horário de Brasília, não em UTC
+      TZ: America/Sao_Paulo
       DB_NAME: adocoes_db
       MONGODB_URI: ${ADOCOES_MONGODB_URI:?Defina ADOCOES_MONGODB_URI no arquivo .env}
       # Dentro da rede do Docker, cada serviço é encontrado pelo próprio nome
@@ -71,3 +76,19 @@ services:
       - animais
       - adotantes
     restart: unless-stopped
+
+  # Testes de integração (Pessoa 9). Não sobe com o "up". Com o projeto rodando:
+  #   docker compose run --rm testes            -> fluxo completo + cenários de erro
+  #   docker compose run --rm testes --queda    -> serviço fora do ar (pare um serviço antes)
+  # O relatório de evidências é salvo em tests/resultados/.
+  testes:
+    image: node:24-alpine
+    profiles: ["testes"]
+    working_dir: /tests
+    volumes:
+      - ./tests:/tests
+    environment:
+      ANIMAIS_URL: http://animais:3001
+      ADOTANTES_URL: http://adotantes:3002
+      ADOCOES_URL: http://adocoes:3003
+    entrypoint: ["node", "integracao.js"]

@@ -5,130 +5,6 @@
 
 const CHAVE_SESSAO_ADMIN = "autenticado";
 
-// Dados de demonstração padrão (fallback resiliente caso a API esteja iniciando)
-const initialAnimalsDemo = [
-  {
-    _id: "demo_1",
-    id: 1,
-    nome: "Amora",
-    especie: "cachorro",
-    sexo: "femea",
-    idade: 2,
-    porte: "medio",
-    cidade: "São Paulo",
-    uf: "SP",
-    disponivel: true,
-    imagemUrl: "https://images.unsplash.com/photo-1724367281416-cf18867ad712?crop=faces&fit=crop&fm=jpg&q=80&w=240&h=240",
-    caracteristicas: { temperamento: "Dócil e brincalhona" },
-    vacinas: [{ nome: "V10 e Antirrábica" }]
-  },
-  {
-    _id: "demo_2",
-    id: 2,
-    nome: "Luna",
-    especie: "gato",
-    sexo: "femea",
-    idade: 1,
-    porte: "pequeno",
-    cidade: "Sorocaba",
-    uf: "SP",
-    disponivel: true,
-    imagemUrl: "https://images.unsplash.com/photo-1594387992816-65f5d74c1de0?crop=faces&fit=crop&fm=jpg&q=80&w=240&h=240",
-    caracteristicas: { temperamento: "Calma e carinhosa" },
-    vacinas: [{ nome: "V4 em dia" }]
-  },
-  {
-    _id: "demo_3",
-    id: 3,
-    nome: "Bento",
-    especie: "cachorro",
-    sexo: "macho",
-    idade: 1,
-    porte: "pequeno",
-    cidade: "Campinas",
-    uf: "SP",
-    disponivel: false,
-    imagemUrl: "https://images.unsplash.com/photo-1724367236214-e4f50691c27c?crop=faces&fit=crop&fm=jpg&q=80&w=240&h=240",
-    caracteristicas: { temperamento: "Muito sociável" },
-    vacinas: [{ nome: "Completa" }]
-  }
-];
-
-const initialRequestsDemo = [
-  {
-    id: 1,
-    name: "Mariana Costa",
-    email: "mariana@email.com",
-    phone: "(11) 98765-4321",
-    city: "São Paulo, SP",
-    interest: "Amora",
-    date: "18 out. 2026",
-    status: "Novo",
-    message: "Quero adotar porque tenho espaço e tempo para oferecer carinho e cuidado. Estou preparado para assumir essa responsabilidade.",
-    details: {
-      tipoMoradia: "Casa com quintal",
-      quintal: "Sim",
-      moradiaPropria: "Sim",
-      outrosAnimais: "0",
-      horasLivres: "5 horas/dia"
-    }
-  },
-  {
-    id: 2,
-    name: "Rafael Martins",
-    email: "rafael@email.com",
-    phone: "(19) 99821-7634",
-    city: "Campinas, SP",
-    interest: "Bento",
-    date: "17 out. 2026",
-    status: "Em contato",
-    message: "Sempre gostei de animais e quero oferecer um lar seguro, com passeios, atenção e acompanhamento veterinário.",
-    details: {
-      tipoMoradia: "Apartamento telado",
-      quintal: "Não",
-      moradiaPropria: "Sim",
-      outrosAnimais: "1 cachorro idoso",
-      horasLivres: "4 horas/dia"
-    }
-  },
-  {
-    id: 3,
-    name: "Ana Clara Silva",
-    email: "anaclara@email.com",
-    phone: "(15) 99143-2208",
-    city: "Sorocaba, SP",
-    interest: "Luna",
-    date: "15 out. 2026",
-    status: "Concluído",
-    message: "Quero dar uma vida confortável e cheia de carinho para um animal que precise de uma família.",
-    details: {
-      tipoMoradia: "Casa",
-      quintal: "Sim (murado)",
-      moradiaPropria: "Sim",
-      outrosAnimais: "0",
-      horasLivres: "6 horas/dia"
-    }
-  },
-  {
-    id: 4,
-    name: "Felipe Souza",
-    email: "felipe@email.com",
-    phone: "(11) 97734-9088",
-    city: "São Paulo, SP",
-    interest: "Cachorro",
-    date: "12 out. 2026",
-    status: "Em contato",
-    message: "Minha família está de acordo com a adoção e temos rotina para cuidar de um cachorro com responsabilidade.",
-    details: {
-      tipoMoradia: "Casa",
-      quintal: "Sim",
-      moradiaPropria: "Sim",
-      outrosAnimais: "0",
-      horasLivres: "4 horas/dia"
-    }
-  }
-];
-
 // Estado Global do Admin
 let adminAnimals = [];
 let adminRequests = [];
@@ -136,6 +12,8 @@ let currentSearchQuery = "";
 let currentFilterStatus = "Todos";
 let expandedRequestId = null;
 let currentEditingAnimalId = null;
+// Textos de características/vacinas como o modal os abriu, para saber se foram alterados
+let editOriginalTexts = { caracteristicas: "", vacinas: "" };
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener("DOMContentLoaded", () => {
@@ -287,16 +165,29 @@ function toggleMobileSidebar(open) {
   }
 }
 
-function showNotice(message) {
+function showNotice(message, isError = false) {
   const noticeBox = document.getElementById("admin-notice-banner");
   const noticeMsg = document.getElementById("admin-notice-text");
   if (!noticeBox || !noticeMsg) return;
 
   noticeMsg.textContent = message;
+  noticeBox.classList.toggle("notice-error", isError);
   noticeBox.classList.remove("hidden");
-  window.setTimeout(() => {
+  window.clearTimeout(showNotice.timer);
+  showNotice.timer = window.setTimeout(() => {
     noticeBox.classList.add("hidden");
-  }, 4000);
+  }, isError ? 7000 : 4000);
+}
+
+function showError(message) {
+  showNotice(message, true);
+}
+
+// Mensagem da API no formato do contrato: { erro, detalhes? }
+async function apiErrorMessage(res, fallback) {
+  const data = await res.json().catch(() => ({}));
+  const details = Array.isArray(data.detalhes) ? `: ${data.detalhes.join(", ")}` : "";
+  return (details ? (data.erro || fallback).replace(/\.$/, "") : data.erro || fallback) + details;
 }
 
 // ==================== 3. GESTÃO DE ANIMAIS ====================
@@ -311,12 +202,12 @@ async function loadAdminAnimals() {
       const data = await res.json();
       adminAnimals = Array.isArray(data) ? data : [];
     } else {
-      console.warn("API de animais retornou status diferente de 200. Usando fallback de demonstração.");
-      adminAnimals = [...initialAnimalsDemo];
+      adminAnimals = [];
+      showError(await apiErrorMessage(res, "Não foi possível carregar os animais."));
     }
   } catch (err) {
-    console.warn("API de animais indisponível no momento. Usando fallback local.");
-    adminAnimals = [...initialAnimalsDemo];
+    adminAnimals = [];
+    showError("Serviço de Animais indisponível. Não foi possível carregar os animais.");
   }
   updateAnimalStats();
   renderAnimalsTable();
@@ -416,8 +307,8 @@ function setupAnimalManagement() {
       sexo,
       idade,
       porte,
-      caracteristicas: { temperamento: caracteristicasRaw || "Dócil" },
-      vacinas: vacinasRaw ? [{ nome: vacinasRaw }] : [],
+      caracteristicas: caracteristicasRaw ? { temperamento: caracteristicasRaw } : {},
+      vacinas: mergeVaccines([], vacinasRaw),
       cidade,
       uf,
       disponivel,
@@ -431,18 +322,14 @@ function setupAnimalManagement() {
         body: JSON.stringify(payload)
       });
 
-      if (res.ok) {
-        const novoAnimal = await res.json();
-        adminAnimals.unshift(novoAnimal);
-      } else {
-        const erroJson = await res.json().catch(() => ({}));
-        console.warn("Falha ao salvar animal na API:", erroJson);
-        // Fallback local
-        adminAnimals.unshift({ ...payload, _id: "local_" + Date.now() });
+      if (res.status !== 201) {
+        showError(await apiErrorMessage(res, "Não foi possível cadastrar o animal."));
+        return;
       }
+      adminAnimals.unshift(await res.json());
     } catch (err) {
-      console.warn("Serviço de animais offline. Adicionado localmente.");
-      adminAnimals.unshift({ ...payload, _id: "local_" + Date.now() });
+      showError("Serviço de Animais indisponível. O animal não foi cadastrado.");
+      return;
     }
 
     form.reset();
@@ -479,14 +366,25 @@ function setupEditModal() {
       const disponivel = document.getElementById("edit-animal-disponivel").value === "true";
       const imagemUrl = document.getElementById("edit-animal-imagem").value.trim();
 
+      const original = adminAnimals.find(a => String(a._id) === String(currentEditingAnimalId)) || {};
+
+      // Campos não alterados no modal são reenviados como vieram da API, para não
+      // perder as características livres nem as datas das vacinas.
+      const caracteristicas = caracteristicasRaw === editOriginalTexts.caracteristicas
+        ? original.caracteristicas || {}
+        : { ...(original.caracteristicas || {}), temperamento: caracteristicasRaw };
+      const vacinas = vacinasRaw === editOriginalTexts.vacinas
+        ? original.vacinas || []
+        : mergeVaccines(original.vacinas, vacinasRaw);
+
       const updatePayload = {
         nome,
         especie,
         sexo,
         idade,
         porte,
-        caracteristicas: { temperamento: caracteristicasRaw || "Dócil" },
-        vacinas: vacinasRaw ? [{ nome: vacinasRaw }] : [],
+        caracteristicas,
+        vacinas,
         cidade,
         uf,
         disponivel,
@@ -500,25 +398,16 @@ function setupEditModal() {
           body: JSON.stringify(updatePayload)
         });
 
-        if (res.ok) {
-          const updated = await res.json();
-          const idx = adminAnimals.findIndex(a => (a._id || a.id) === currentEditingAnimalId);
-          if (idx !== -1) adminAnimals[idx] = updated;
-        } else {
-          // Atualiza também via PATCH de disponibilidade se a rota PUT não estiver ativa
-          await fetch(`${CONFIG.API_ANIMAIS}/animais/${currentEditingAnimalId}/disponibilidade`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ disponivel })
-          }).catch(() => {});
-
-          const idx = adminAnimals.findIndex(a => (a._id || a.id) === currentEditingAnimalId);
-          if (idx !== -1) adminAnimals[idx] = { ...adminAnimals[idx], ...updatePayload };
+        if (!res.ok) {
+          showError(await apiErrorMessage(res, "Não foi possível salvar as alterações."));
+          return;
         }
+        const updated = await res.json();
+        const idx = adminAnimals.findIndex(a => String(a._id) === String(currentEditingAnimalId));
+        if (idx !== -1) adminAnimals[idx] = updated;
       } catch (err) {
-        console.warn("Falha na atualização via API. Atualizado localmente.");
-        const idx = adminAnimals.findIndex(a => (a._id || a.id) === currentEditingAnimalId);
-        if (idx !== -1) adminAnimals[idx] = { ...adminAnimals[idx], ...updatePayload };
+        showError("Serviço de Animais indisponível. As alterações não foram salvas.");
+        return;
       }
 
       modal.classList.add("hidden");
@@ -556,8 +445,22 @@ function openEditAnimalModal(id) {
   document.getElementById("edit-animal-uf").value = animal.uf || animal.state || "SP";
   document.getElementById("edit-animal-disponivel").value = animal.disponivel === false ? "false" : "true";
   document.getElementById("edit-animal-imagem").value = animal.imagemUrl || animal.image || "";
+  editOriginalTexts = {
+    caracteristicas: document.getElementById("edit-animal-caracteristicas").value.trim(),
+    vacinas: document.getElementById("edit-animal-vacinas").value.trim()
+  };
 
   modal.classList.remove("hidden");
+}
+
+// Lista de vacinas digitada ("V10, Antirrábica") mantendo a data das que já existiam
+function mergeVaccines(originalVaccines, text) {
+  const existing = Array.isArray(originalVaccines) ? originalVaccines : [];
+  return text
+    .split(",")
+    .map(nome => nome.trim())
+    .filter(Boolean)
+    .map(nome => existing.find(v => v.nome === nome) || { nome });
 }
 
 // ==================== 5. HISTÓRICO DE ADOTANTES E SOLICITAÇÕES ====================
@@ -607,9 +510,9 @@ async function loadAdminRequests() {
           return {
             id: item._id || idx + 1,
             name: resumo.nomeCompleto || adotante.nomeCompleto || "Adotante",
-            email: resumo.email || adotante.email || "contato@email.com",
+            email: resumo.email || adotante.email || "Não informado",
             phone: telefone || "(Não informado)",
-            city: `${resumo.cidade || adotante.cidade || "São Paulo"}, ${resumo.uf || adotante.uf || "SP"}`,
+            city: [resumo.cidade || adotante.cidade, resumo.uf || adotante.uf].filter(Boolean).join(", ") || "Não informado",
             interest: item.resumoAnimal?.nome || "Pet",
             date: item.criadoEm ? new Date(item.criadoEm).toLocaleDateString("pt-BR") : "Hoje",
             status: item.status || "Pendente",
@@ -625,13 +528,15 @@ async function loadAdminRequests() {
           };
         });
       } else {
-        adminRequests = [...initialRequestsDemo];
+        adminRequests = [];
       }
     } else {
-      adminRequests = [...initialRequestsDemo];
+      adminRequests = [];
+      showError(await apiErrorMessage(resAdocoes, "Não foi possível carregar as solicitações."));
     }
   } catch (err) {
-    adminRequests = [...initialRequestsDemo];
+    adminRequests = [];
+    showError("Serviço de Adoções indisponível. Não foi possível carregar as solicitações.");
   }
 
   updateHistoryStats();
@@ -855,21 +760,28 @@ async function cycleRequestStatus(id) {
     novoStatus = "Pendente";
   }
 
+  const statusAnterior = req.status;
   req.status = novoStatus;
 
   // Atualiza imediatamente contadores e tabela na tela
   updateHistoryStats();
   renderRequestsTable();
 
-  // Persiste a alteração no banco de dados via API de Adoções
+  // Persiste a alteração no banco de dados via API de Adoções; se falhar, desfaz na tela
   try {
-    await fetch(`${CONFIG.API_ADOCOES}/adocoes/${id}/status`, {
+    const res = await fetch(`${CONFIG.API_ADOCOES}/adocoes/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: novoStatus })
     });
+    if (!res.ok) throw new Error(await apiErrorMessage(res, "Não foi possível alterar o status."));
   } catch (err) {
-    console.warn("Falha ao atualizar status na API de Adoções. Atualizado localmente.");
+    req.status = statusAnterior;
+    updateHistoryStats();
+    renderRequestsTable();
+    showError(err.message && !err.message.includes("fetch")
+      ? err.message
+      : "Serviço de Adoções indisponível. O status não foi alterado.");
   }
 }
 
