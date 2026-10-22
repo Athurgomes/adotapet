@@ -1,4 +1,4 @@
-# Microsserviço de Adoções — AdotaPet
+# Microsserviço de Adoções — Aumigo
 
 Serviço responsável por registrar e consultar solicitações de adoção. Ele usa **Node.js**, **Express** e **Mongoose**, roda na porta **3003** e grava seus dados no banco **`adocoes_db`** do MongoDB Atlas.
 

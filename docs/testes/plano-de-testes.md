@@ -1,4 +1,4 @@
-# Plano de testes e integração — AdotaPet
+# Plano de testes e integração — Aumigo
 
 > **Responsável:** Pessoa 9 (Integração, Testes e Documentação)
 > **Base:** requisitos **revisados** RF01–RF13 / RNF01–RNF11 (`requisitos (1).docx`, 21/10/2026) e [contrato-api.md](../contrato-api.md)

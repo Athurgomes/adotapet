@@ -1,4 +1,4 @@
-# AdotaPet: frontend + 3 microsserviços, agrupados no projeto "projeto-adotapet".
+# Aumigo: frontend + 3 microsserviços, agrupados no projeto "projeto-adotapet".
 # Para subir tudo:  docker compose up --build
 # As connection strings do MongoDB Atlas ficam no arquivo .env (veja .env.example).
 

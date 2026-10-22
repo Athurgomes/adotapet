@@ -1,4 +1,4 @@
-# Contrato de API — AdotaPet (RASCUNHO para revisão)
+# Contrato de API — Aumigo (RASCUNHO para revisão)
 
 > **Status:** proposta inicial feita pela Pessoa 3 com base nos requisitos RF01–RF13.
 > **Atualização de 22/10/2026 (Pessoa 9):** inclusão de `PUT /animais/:id`, `GET /adotantes?email=`, `PATCH /adocoes/:id/status` e das regras de erro já implementadas. A numeração de RFs citada abaixo é a da primeira versão dos requisitos.

@@ -1,4 +1,4 @@
-# Relatório Técnico — AdotaPet: Plataforma Comunitária de Adoção de Animais
+# Relatório Técnico — Aumigo: Plataforma Comunitária de Adoção de Animais
 
 > **Organização:** Pessoa 9. Este arquivo é o **esqueleto** do relatório: cada seção indica o responsável e o que precisa ser enviado.
 > Ao final, o conteúdo será padronizado e passado para o formato de entrega (Word/PDF).
@@ -66,13 +66,13 @@ Além disso, a falta de um espaço organizado pode dificultar a divulgação dos
 
 ### 1.2 Justificativa
 
-O AdotaPet foi pensado para facilitar a divulgação de animais disponíveis para adoção, reunindo suas informações em uma única plataforma. A ideia é permitir que um administrador autorizado cadastre e gerencie os animais divulgados, enquanto as pessoas interessadas poderão consultar as informações e fazer solicitações de adoção.
+O Aumigo foi pensado para facilitar a divulgação de animais disponíveis para adoção, reunindo suas informações em uma única plataforma. A ideia é permitir que um administrador autorizado cadastre e gerencie os animais divulgados, enquanto as pessoas interessadas poderão consultar as informações e fazer solicitações de adoção.
 
 O projeto também permite aplicar na prática os conteúdos estudados na disciplina, principalmente a utilização de bancos de dados não convencionais e a arquitetura de microsserviços. Para isso, será utilizado o MongoDB para armazenar os dados e três microsserviços responsáveis por animais, adotantes e solicitações de adoção.
 
 ### 1.3 Objetivos
 
-O objetivo do AdotaPet é desenvolver uma plataforma web que facilite a divulgação de animais disponíveis para adoção e permita que pessoas interessadas encontrem informações sobre eles em um único lugar.
+O objetivo do Aumigo é desenvolver uma plataforma web que facilite a divulgação de animais disponíveis para adoção e permita que pessoas interessadas encontrem informações sobre eles em um único lugar.
 
 Para isso, o sistema permitirá cadastrar e editar animais com informações como nome, espécie, sexo, idade, porte e características, além de disponibilizar um catálogo para consulta com filtros por espécie, sexo, porte e região. Também será possível que pessoas interessadas em adotar preencham um formulário com informações pessoais e perguntas sobre suas condições para cuidar de um animal, permitindo o envio de solicitações de adoção.
 
@@ -86,7 +86,7 @@ O público-alvo são protetores independentes e abrigos que precisam divulgar an
 
 *Responsável: Pessoa 1*
 
-Os requisitos funcionais definem as funcionalidades que o AdotaPet deverá oferecer aos usuários, enquanto os requisitos não funcionais descrevem as características técnicas necessárias para o funcionamento do sistema.
+Os requisitos funcionais definem as funcionalidades que o Aumigo deverá oferecer aos usuários, enquanto os requisitos não funcionais descrevem as características técnicas necessárias para o funcionamento do sistema.
 
 ### 2.1 Requisitos funcionais
 
@@ -130,7 +130,7 @@ Os requisitos funcionais definem as funcionalidades que o AdotaPet deverá ofere
 
 *Responsável: Pessoa 1*
 
-O AdotaPet será desenvolvido como um protótipo de plataforma web voltada à divulgação de animais disponíveis para adoção e ao envio de solicitações por pessoas interessadas em adotá-los.
+O Aumigo será desenvolvido como um protótipo de plataforma web voltada à divulgação de animais disponíveis para adoção e ao envio de solicitações por pessoas interessadas em adotá-los.
 
 O sistema permitirá listar e consultar animais, além de filtrar os resultados por espécie, sexo, porte e região, considerando a cidade e a UF. O cadastro, a edição e a atualização da disponibilidade dos animais serão realizados por meio de uma área administrativa, que contará com uma interface de login. Quando um animal for marcado como indisponível, essa informação será atualizada no banco de dados e ele deixará de aparecer na página inicial.
 
@@ -148,7 +148,7 @@ Nesta versão, não serão implementados recursos como pagamentos, chat entre us
 
 *Responsáveis: Pessoa 1 (texto) e Pessoa 3 (infraestrutura)*
 
-O AdotaPet utiliza uma arquitetura de microsserviços, dividindo as principais funcionalidades do sistema em três serviços independentes: Animais, Adotantes e Adoções. Essa divisão permite organizar melhor as responsabilidades e demonstrar a comunicação entre diferentes serviços.
+O Aumigo utiliza uma arquitetura de microsserviços, dividindo as principais funcionalidades do sistema em três serviços independentes: Animais, Adotantes e Adoções. Essa divisão permite organizar melhor as responsabilidades e demonstrar a comunicação entre diferentes serviços.
 
 Os microsserviços são desenvolvidos utilizando Node.js e Express, com MongoDB para o armazenamento das informações. Cada serviço tem seu próprio banco de dados lógico, evitando o acesso direto aos dados dos demais serviços.
 
@@ -161,7 +161,7 @@ O sistema também conta com uma **área administrativa**, composta por uma inter
 A comunicação entre os microsserviços ocorre por meio de APIs REST, utilizando requisições HTTP. Dessa forma, o microsserviço de Adoções obtém as informações necessárias dos outros serviços sem acessar diretamente seus bancos de dados.
 
 ```
-AdotaPet
+Aumigo
 ├── Frontend (HTML, CSS e JavaScript) — nginx, porta 5500
 │   ├── Página inicial: catálogo de animais disponíveis, filtros e consulta
 │   ├── Formulário de adoção: dados pessoais e informações adicionais
@@ -174,7 +174,7 @@ AdotaPet
             └── HTTP → Animais e Adotantes (validação da solicitação)
 ```
 
-> **[INSERIR Figura 1 – Arquitetura do AdotaPet]** (versão desenhada do esquema acima)
+> **[INSERIR Figura 1 – Arquitetura do Aumigo]** (versão desenhada do esquema acima)
 
 ### 4.1 Decisões de arquitetura
 

@@ -1,4 +1,4 @@
-# Registro de erros e pendências — AdotaPet
+# Registro de erros e pendências — Aumigo
 
 > **Responsável:** Pessoa 9. Cada item é avisado ao responsável e acompanhado até ser corrigido.
 > Ao corrigir, quem corrigiu atualiza o **Status** e roda de novo o caso de teste indicado.
@@ -35,7 +35,7 @@ Detalhes nas [evidências](../relatorio/evidencias/testes/).
 | E23 | Documentação | Status "Em contato"/"Concluído" e `PATCH /adocoes/:id/status` não estão no contrato nem nos requisitos | Pessoas 7 e 1 | CT53 | A decidir (rota já documentada no contrato) |
 | E14 | Baixa | Selo "Vacinado" aparece em todos os animais | Pessoa 4 | CF01 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
 | E15 | Baixa | Dados dos animais inseridos no HTML sem escapar | Pessoa 4 | — | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
-| E16 | Documentação | O site se chama "Aumigo" e o projeto se chama "AdotaPet" | Pessoas 1 e 2 | — | A decidir |
+| E16 | Documentação | O site se chama "Aumigo" e o projeto se chamava "AdotaPet" | Pessoas 1 e 2 | — | **Corrigido** (22/10: o nome é Aumigo) |
 | E10 | — | Questionário incompleto no formulário | Pessoa 4 | CF05 | **Fechado** |
 | E12 | — | Microsserviço de Animais fora da `main` | Pessoa 5 | — | **Fechado** (PR #4) |
 | E13 | — | Faltavam telas de cadastro, edição, disponibilidade e consulta de solicitações | Pessoa 4 | — | **Fechado** (PR #6; ver E17) |
@@ -133,6 +133,7 @@ Encontrado na revisão do `frontend/js/admin.js`:
 ## E16 — Nome do projeto: "Aumigo" x "AdotaPet"
 
 - O site e o painel usam **Aumigo**; requisitos, repositório e relatório usam **AdotaPet**. Definir o nome para a apresentação e o relatório.
+- **Decisão (22/10):** o nome é **Aumigo**. As menções ao nome no site, no painel, nos documentos e nos testes foram trocadas. Os identificadores técnicos continuam `adotapet` (repositório, pasta, projeto Docker `projeto-adotapet`, cluster do Atlas e nomes dos pacotes npm), e as evidências de testes já salvas ficam como foram geradas.
 
 ---
 
