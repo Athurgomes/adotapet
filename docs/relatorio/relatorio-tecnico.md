@@ -1,40 +1,5 @@
 # Relatório Técnico — Aumigo: Plataforma Comunitária de Adoção de Animais
 
-> **Organização:** Pessoa 9. Versão consolidada em 22/10/2026 a partir do código da `main`, dos documentos em `docs/` e dos testes executados nesse dia.
-> Ao final, o conteúdo será padronizado e passado para o formato de entrega (Word/PDF). Os itens marcados com **[PENDENTE]** dependem de informações que só os integrantes têm.
-
-## Status das contribuições
-
-| Seção | Responsável | Status |
-|---|---|---|
-| 1–3. Introdução, requisitos e escopo | Pessoa 1 | Completo (versão revisada dos requisitos, 21/10). Escopo atualizado com o andamento das solicitações (E23) |
-| 4. Arquitetura | Pessoa 1 + Pessoa 3 | Completo, com a Figura 1 e as decisões de arquitetura |
-| 5. Infraestrutura e ambiente | Pessoa 3 | Completo (base: `README.md`, `docker-compose.yml` e guia do banco) |
-| 6. Design (UI/UX) | Pessoa 2 | Completo a partir do código do frontend. **[PENDENTE]** link do protótipo no Figma (EV23) |
-| 7. Modelagem dos dados no MongoDB | Pessoa 8 + 5, 6, 7 | Completo, conferido com os modelos do código |
-| 8. Microsserviços | Pessoas 5, 6 e 7 | Completo a partir do código e do contrato de API |
-| 9. Frontend | Pessoa 4 | Completo, com prints das telas |
-| 10. Experimentação MongoDB x PostgreSQL | Pessoa 8 | Completo (resumo de `docs/analise-comparativa-banco.md`) |
-| 11. Testes e integração | Pessoa 9 | Completo, com os resultados de 22/10 |
-| 12. Conclusão | Todos (Pessoa 1 consolida) | Conclusão geral escrita. **[PENDENTE]** um parágrafo de cada integrante (12.3) |
-| 13. Referências | Todos | Referências das tecnologias usadas. Cada integrante pode acrescentar as suas |
-| Apêndice A | Todos | Preenchido a partir do histórico do repositório. **[PENDENTE]** conferir nomes |
-
-Evidências ainda não capturadas (precisam do terminal ou do Compass): EV01 (`docker compose ps`), EV03, EV19, EV20 e EV21 (Compass), EV18 (aba Network) e EV22 (persistência após `restart`). Ver o [checklist](evidencias/README.md).
-
-## Padrões do relatório
-
-- Idioma: português, 3ª pessoa ("o sistema permite", "foi utilizado").
-- Termos padronizados: **microsserviço** (não "micro-serviço"), **interessado** (quem preenche o questionário; o serviço continua se chamando *Adotantes*), **solicitação de adoção**, **área administrativa** / **painel administrativo**, **MongoDB Atlas**, nomes dos bancos em código (`animais_db`).
-- Numeração dos requisitos: usar a da **versão revisada** (RF01–RF13, RNF01–RNF11).
-- Nomes de campos, rotas e comandos em `código`: `GET /animais`, `disponivel`.
-- Figuras numeradas com legenda abaixo: *Figura N – Descrição. Fonte: os autores (2026).*
-- Tabelas numeradas com título acima: *Tabela N – Descrição.*
-- Trechos de código curtos (até ~20 linhas); o código completo fica no repositório.
-- Prints sem senhas, connection strings ou dados pessoais reais (RNF09).
-
----
-
 ## Sumário
 
 1. Introdução
@@ -246,8 +211,6 @@ O site fica em <http://localhost:5500>, o painel em <http://localhost:5500/admin
 ## 6. Design da interface
 
 *Responsável: Pessoa 2*
-
-> **[PENDENTE — Pessoa 2]** Link do protótipo no Figma e print do protótipo (EV23).
 
 A interface adota uma identidade acolhedora, com o nome **Aumigo**, tons de roxo e lavanda sobre fundo creme e cantos bem arredondados. O site público e o painel compartilham a mesma paleta e as mesmas fontes.
 
@@ -594,10 +557,6 @@ O MongoDB se mostrou adequado aos dados do projeto, em especial às característ
 - **Isolamento físico dos bancos:** os três bancos estão no mesmo cluster gratuito do Atlas; em produção, cada serviço poderia ter um cluster próprio, eliminando esse ponto único de falha.
 - **Banco separado para testes:** os testes automatizados gravam dados no mesmo banco usado pelo site, o que exige limpeza antes de demonstrações.
 
-### 12.3 Contribuições individuais
-
-> **[PENDENTE — todos]** Cada integrante envia um parágrafo: o que fez, a principal dificuldade e o que aprendeu.
-
 ## 13. Referências
 
 DOCKER INC. **Docker Compose documentation**. Disponível em: <https://docs.docker.com/compose/>. Acesso em: 22 out. 2026.
@@ -616,21 +575,17 @@ OPENJS FOUNDATION. **Node.js documentation**. Disponível em: <https://nodejs.or
 
 THE POSTGRESQL GLOBAL DEVELOPMENT GROUP. **PostgreSQL documentation**. Disponível em: <https://www.postgresql.org/docs/>. Acesso em: 22 out. 2026.
 
-> Cada integrante pode acrescentar aqui outras referências que tenha usado.
-
 ---
 
 ## Apêndice A — Contribuições dos integrantes
 
 *Tabela 16 – Contribuições de cada integrante.*
 
-> **[PENDENTE]** Os nomes abaixo vieram do histórico de commits do repositório. Conferir a correspondência e preencher as Pessoas 1 e 2.
-
 | Integrante | Nome | Responsabilidade | Principais entregas |
 |---|---|---|---|
-| Pessoa 1 | | Pesquisa, requisitos e organização | Documento de requisitos, escopo, texto da arquitetura |
-| Pessoa 2 | | Design (UI/UX) | Identidade visual Aumigo, protótipo no Figma |
-| Pessoa 3 | @Athurgomes (GitHub) | Infraestrutura e configuração | Repositório, estrutura inicial dos 3 serviços e do frontend, Docker Compose, MongoDB Atlas e usuários, guias, contrato de API inicial |
+| Pessoa 1 | Isadora Rocha | Pesquisa, requisitos e organização | Documento de requisitos, escopo, texto da arquitetura |
+| Pessoa 2 | Arthur Rodrigues | Design (UI/UX) | Identidade visual Aumigo, paleta, tipografia e layout das telas |
+| Pessoa 3 | Arthur Oliveira Gomes | Infraestrutura e configuração | Repositório, estrutura inicial dos 3 serviços e do frontend, Docker Compose, MongoDB Atlas e usuários, guias, contrato de API inicial |
 | Pessoa 4 | Marielly Moreira da Silva Oliveira | Frontend | Site público (catálogo, filtros, formulário) e painel administrativo (PRs #3 e #6) |
 | Pessoa 5 | Caio Varandas | Microsserviço de Animais | Rotas de cadastro, listagem com filtros, consulta e disponibilidade (PR #4) |
 | Pessoa 6 | Lucas Moura | Microsserviço de Adotantes | Rotas do questionário, validações, e-mail único e cálculo da idade (PR #2) |
