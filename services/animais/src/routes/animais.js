@@ -100,6 +100,20 @@ router.get('/:id', async (req, res) => {
   res.json(animal);
 });
 
+// RF12 - Editar animal (área administrativa)
+// Atualiza os campos enviados; o documento inteiro é validado de novo ao salvar.
+router.put('/:id', async (req, res) => {
+  const animal = await Animal.findById(req.params.id);
+  if (!animal) return res.status(404).json({ erro: 'Animal não encontrado.' });
+
+  for (const campo of CAMPOS_PERMITIDOS) {
+    if (req.body && req.body[campo] !== undefined) animal.set(campo, req.body[campo]);
+  }
+
+  await animal.save();
+  res.json(animal);
+});
+
 // RF05 - Atualizar disponibilidade
 router.patch('/:id/disponibilidade', async (req, res) => {
   const disponivel = req.body?.disponivel;

@@ -26,3 +26,6 @@ app_build/
 
 # Production Artifacts
 production_artifacts/
+
+# Resultados dos testes de integração (gerados a cada execução)
+tests/resultados/

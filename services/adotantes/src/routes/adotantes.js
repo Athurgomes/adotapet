@@ -37,8 +37,13 @@ function dataNascimentoValida(valor) {
 // Valida os dados recebidos e retorna uma lista de mensagens de erro.
 function validarCadastro(corpo) {
   const detalhes = [];
+  // RF06: todos estes dados fazem parte do questionário. A cidade também é
+  // usada pelo serviço de Adoções no resumo da solicitação.
   const camposTexto = [
     'nomeCompleto',
+    'profissao',
+    'endereco',
+    'cidade',
     'uf',
     'telefone',
     'email',
@@ -52,13 +57,6 @@ function validarCadastro(corpo) {
   for (const campo of camposTexto) {
     if (typeof corpo[campo] !== 'string' || !corpo[campo].trim()) {
       detalhes.push(`campo '${campo}' é obrigatório e deve ser texto`);
-    }
-  }
-
-  // Estes dados podem ser omitidos; quando enviados, devem ser texto.
-  for (const campo of ['profissao', 'endereco', 'cidade']) {
-    if (corpo[campo] != null && typeof corpo[campo] !== 'string') {
-      detalhes.push(`campo '${campo}' deve ser texto quando informado`);
     }
   }
 
@@ -151,9 +149,19 @@ router.post('/', async (req, res, next) => {
 });
 
 // GET /adotantes: lista os cadastros do mais recente para o mais antigo.
+// Com ?email=, devolve só o cadastro daquele e-mail (usado pelo site quando o
+// e-mail já existe, sem baixar os dados de todos os interessados).
 router.get('/', async (req, res, next) => {
+  const filtro = {};
+  if (req.query.email !== undefined) {
+    if (typeof req.query.email !== 'string' || !req.query.email.trim()) {
+      return res.status(400).json({ erro: "Filtro 'email' inválido." });
+    }
+    filtro.email = req.query.email.trim().toLowerCase();
+  }
+
   try {
-    const adotantes = await Adotante.find().sort({ criadoEm: -1 }).lean();
+    const adotantes = await Adotante.find(filtro).sort({ criadoEm: -1 }).lean();
     return res.json(adotantes);
   } catch (erro) {
     return next(erro);

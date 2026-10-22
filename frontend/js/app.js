@@ -257,27 +257,28 @@ function renderPets() {
 
   petsToDisplay.forEach(pet => {
     const detail = `${pet.sexo === "femea" ? "Fêmea" : "Macho"} • ${pet.idade} ${pet.idade === 1 ? "ano" : "anos"} • Porte ${pet.porte ? pet.porte.toUpperCase() : "M"}`;
+    const vacinado = Array.isArray(pet.vacinas) && pet.vacinas.length > 0;
 
     const card = document.createElement("article");
     card.className = "pet-card";
     card.innerHTML = `
       <div class="pet-img-box">
-        <img src="${pet.imagemUrl}" alt="${pet.nome}, disponível para adoção" />
+        <img src="${escapeHtml(pet.imagemUrl)}" alt="${escapeHtml(pet.nome)}, disponível para adoção" />
       </div>
       <div class="pet-info">
         <div class="pet-header-info">
           <div>
-            <h3 class="pet-name">${pet.nome}</h3>
-            <p class="pet-detail">${detail}</p>
+            <h3 class="pet-name">${escapeHtml(pet.nome)}</h3>
+            <p class="pet-detail">${escapeHtml(detail)}</p>
           </div>
-          <span class="pet-badge-vacinado">Vacinado</span>
+          ${vacinado ? '<span class="pet-badge-vacinado">Vacinado</span>' : ""}
         </div>
         <div class="pet-footer-info">
           <span class="pet-city">
             <svg class="icon-sm text-primary" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            ${pet.cidade}, ${pet.uf}
+            ${escapeHtml(pet.cidade)}, ${escapeHtml(pet.uf)}
           </span>
-          <button class="adopt-circle-btn" title="Tenho interesse em ${pet.nome}" onclick="startAdoption('${pet._id}')">
+          <button class="adopt-circle-btn" title="Tenho interesse em ${escapeHtml(pet.nome)}" onclick="startAdoption('${escapeHtml(pet._id)}')">
             <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
           </button>
         </div>
@@ -298,6 +299,16 @@ function renderPets() {
       }
     }
   }
+}
+
+// Evita que textos vindos da API sejam interpretados como HTML
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function startAdoption(petId) {
@@ -332,12 +343,8 @@ function setupAdoptionForm() {
     const birthDateValue = document.getElementById("dataNascimento").value;
     const petId = document.getElementById("selectedPetId").value;
 
-    const age = calculateAge(birthDateValue);
-    if (isNaN(age) || age < 21) {
-      errorBox.textContent = "Regra do sistema (RF07): Apenas pessoas com idade igual ou superior a 21 anos podem solicitar adoção.";
-      errorBox.classList.remove("hidden");
-      return;
-    }
+    // A idade mínima (RF07) é validada pelo microsserviço de Adoções (RF10),
+    // que responde 422; a mensagem dele é exibida abaixo.
 
     if (!petId) {
       errorBox.textContent = "Por favor, selecione qual animal você deseja adotar.";
@@ -365,86 +372,73 @@ function setupAdoptionForm() {
       }
     };
 
-    try {
-      let adotanteId = null;
-
-      try {
-        const respAdotante = await fetch(`${CONFIG.API_ADOTANTES}/adotantes`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(adotantePayload)
-        });
-
-        if (respAdotante.ok) {
-          const jsonAdotante = await respAdotante.json();
-          adotanteId = jsonAdotante._id;
-        } else if (respAdotante.status === 409) {
-          // Se o e-mail já existe, busca o adotante para vincular à nova solicitação
-          const listResp = await fetch(`${CONFIG.API_ADOTANTES}/adotantes`);
-          if (listResp.ok) {
-            const list = await listResp.json();
-            const existing = list.find(a => a.email.toLowerCase() === adotantePayload.email.toLowerCase());
-            if (existing) adotanteId = existing._id;
-          }
-          if (!adotanteId) {
-            const errData = await respAdotante.json().catch(() => ({}));
-            errorBox.textContent = errData.erro || "Já existe um cadastro com este e-mail.";
-            errorBox.classList.remove("hidden");
-            return;
-          }
-        } else {
-          const errData = await respAdotante.json().catch(() => ({}));
-          const details = errData.detalhes ? `: ${errData.detalhes.join(", ")}` : "";
-          errorBox.textContent = (errData.erro || "Erro ao cadastrar adotante") + details;
-          errorBox.classList.remove("hidden");
-          return;
-        }
-      } catch (err) {
-        console.warn("Serviço de adotantes offline. Prosseguindo em modo demonstração.");
-        adotanteId = "mock_adotante_" + Date.now();
-      }
-
-      if (!adotanteId) {
-        adotanteId = "mock_adotante_" + Date.now();
-      }
-
-      try {
-        const respAdocao = await fetch(`${CONFIG.API_ADOCOES}/adocoes`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ animalId: petId, adotanteId: adotanteId })
-        });
-
-        if (!respAdocao.ok && respAdocao.status !== 503) {
-          const errAdocao = await respAdocao.json().catch(() => ({}));
-          errorBox.textContent = errAdocao.erro || "Erro ao registrar solicitação de adoção.";
-          errorBox.classList.remove("hidden");
-          return;
-        }
-      } catch (err) {
-        console.warn("Serviço de adoções offline. Registrado localmente.");
-      }
-
-      document.getElementById("form-wrapper").classList.add("hidden");
-      document.getElementById("form-success-wrapper").classList.remove("hidden");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-
-    } catch (error) {
-      errorBox.textContent = "Ocorreu um erro ao enviar. Tente novamente.";
+    const showError = (message) => {
+      errorBox.textContent = message;
       errorBox.classList.remove("hidden");
-    }
-  });
-}
+    };
 
-function calculateAge(dateString) {
-  const today = new Date();
-  const birthDate = new Date(dateString);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
+    // Mensagem da API no formato do contrato: { erro, detalhes? }
+    const apiErrorMessage = async (resp, fallback) => {
+      const data = await resp.json().catch(() => ({}));
+      const details = Array.isArray(data.detalhes) ? `: ${data.detalhes.join(", ")}` : "";
+      return (details ? (data.erro || fallback).replace(/\.$/, "") : data.erro || fallback) + details;
+    };
+
+    const UNAVAILABLE_MSG =
+      "Não foi possível registrar a solicitação agora porque um dos nossos serviços está indisponível. Tente novamente em alguns minutos.";
+
+    // 1. Questionário do interessado (microsserviço de Adotantes)
+    let adotanteId = null;
+    try {
+      const respAdotante = await fetch(`${CONFIG.API_ADOTANTES}/adotantes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adotantePayload)
+      });
+
+      if (respAdotante.status === 201) {
+        adotanteId = (await respAdotante.json())._id;
+      } else if (respAdotante.status === 409) {
+        // E-mail já cadastrado: busca só esse cadastro para vincular à nova solicitação
+        const email = encodeURIComponent(adotantePayload.email.toLowerCase());
+        const respBusca = await fetch(`${CONFIG.API_ADOTANTES}/adotantes?email=${email}`);
+        const encontrados = respBusca.ok ? await respBusca.json() : [];
+        if (!encontrados.length) {
+          return showError(await apiErrorMessage(respAdotante, "Já existe um cadastro com este e-mail."));
+        }
+        adotanteId = encontrados[0]._id;
+      } else if (respAdotante.status >= 500) {
+        return showError(UNAVAILABLE_MSG);
+      } else {
+        return showError(await apiErrorMessage(respAdotante, "Não foi possível enviar o questionário."));
+      }
+    } catch (err) {
+      return showError(UNAVAILABLE_MSG);
+    }
+
+    // 2. Solicitação de adoção (microsserviço de Adoções valida animal, idade e duplicidade)
+    try {
+      const respAdocao = await fetch(`${CONFIG.API_ADOCOES}/adocoes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ animalId: petId, adotanteId: adotanteId })
+      });
+
+      if (respAdocao.status === 503) {
+        return showError(UNAVAILABLE_MSG);
+      }
+      if (respAdocao.status !== 201) {
+        return showError(await apiErrorMessage(respAdocao, "Não foi possível registrar a solicitação de adoção."));
+      }
+    } catch (err) {
+      return showError(UNAVAILABLE_MSG);
+    }
+
+    // Só chega aqui com a solicitação gravada (201)
+    document.getElementById("form-wrapper").classList.add("hidden");
+    document.getElementById("form-success-wrapper").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 }
 
 function resetFormState() {

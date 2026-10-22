@@ -1,6 +1,7 @@
 # Contrato de API — AdotaPet (RASCUNHO para revisão)
 
 > **Status:** proposta inicial feita pela Pessoa 3 com base nos requisitos RF01–RF13.
+> **Atualização de 22/10/2026 (Pessoa 9):** inclusão de `PUT /animais/:id`, `GET /adotantes?email=`, `PATCH /adocoes/:id/status` e das regras de erro já implementadas. A numeração de RFs citada abaixo é a da primeira versão dos requisitos.
 > Precisa ser revisada e aprovada pelas Pessoas 4, 5, 6, 7 e 8 **antes de programar**.
 > Mudanças combinadas devem ser registradas neste arquivo.
 
@@ -103,6 +104,7 @@ O serviço de Adoções também retorna `"dependencias": { "animais": "no ar", "
 | `POST` | `/animais` | Cadastrar animal (RF01) | 201 + documento criado | 400 |
 | `GET` | `/animais` | Listar com filtros opcionais (RF02, RF03) | 200 + array | 400 |
 | `GET` | `/animais/:id` | Consultar um animal (RF04) | 200 + documento | 400, 404 |
+| `PUT` | `/animais/:id` | Editar animal pela área administrativa (RF12) | 200 + documento atualizado | 400, 404 |
 | `PATCH` | `/animais/:id/disponibilidade` | Atualizar disponibilidade (RF05) | 200 + documento atualizado | 400, 404 |
 
 ### Detalhes de implementação
@@ -169,6 +171,16 @@ Valor inválido em `especie`, `sexo`, `porte` ou `disponivel` → `400`:
 | 400 | `{ "erro": "ID inválido." }` |
 | 404 | `{ "erro": "Animal não encontrado." }` |
 
+### `PUT /animais/:id` (RF12)
+
+*Incluída em 22/10/2026 (E17 do registro de erros).* Corpo com os campos a alterar (os mesmos do `POST`; `_id`, `criadoEm` e `atualizadoEm` são ignorados). Só os campos enviados mudam, e o documento inteiro é validado de novo antes de salvar.
+```json
+{ "nome": "Caramelo", "idade": 4, "caracteristicas": { "castrado": true }, "vacinas": [{ "nome": "V10", "data": "2026-03-10" }] }
+```
+`200` + documento atualizado. Erros: `400` (id inválido ou dados inválidos, com `detalhes`), `404` (animal não existe).
+
+> `caracteristicas` e `vacinas` são **substituídas** pelo que for enviado. O painel reenvia esses campos como vieram da API quando eles não foram alterados, para não perder dados.
+
 ### `PATCH /animais/:id/disponibilidade` (RF05)
 
 Corpo (`disponivel` é obrigatório e precisa ser booleano de verdade: `"false"` ou `0` são rejeitados):
@@ -231,7 +243,7 @@ Exemplos prontos para executar: [`services/animais/testes.http`](../services/ani
 | `dataNascimento` | string (data) | sim | A idade é **calculada** a partir dela. *Proposta: guardar a data em vez da idade, para a idade não ficar desatualizada* |
 | `profissao` | string | sim | |
 | `endereco` | string | sim | |
-| `cidade` | string | sim | |
+| `cidade` | string | sim | Também usada no `resumoAdotante` da solicitação |
 | `uf` | string | sim | 2 letras |
 | `telefone` | string | sim | |
 | `email` | string | sim | Formato de e-mail; único |
@@ -245,7 +257,7 @@ Exemplos prontos para executar: [`services/animais/testes.http`](../services/ani
 | Método | Rota | Descrição | Sucesso | Erros |
 |---|---|---|---|---|
 | `POST` | `/adotantes` | Cadastrar adotante + questionário (RF06, RF08) | 201 + documento criado | 400, 409 (e-mail já cadastrado) |
-| `GET` | `/adotantes` | Listar adotantes (RF09) | 200 + array | |
+| `GET` | `/adotantes` | Listar adotantes (painel, RF13). Filtro opcional `?email=` devolve só aquele cadastro (sem diferenciar maiúsculas) | 200 + array | 400 (`email` vazio) |
 | `GET` | `/adotantes/:id` | Consultar um adotante (RF09) | 200 + documento **com o campo `idade` calculado** | 400, 404 |
 
 O campo `idade` (calculado) no `GET /adotantes/:id` é o que o serviço de Adoções usa para validar a idade mínima.
@@ -293,6 +305,9 @@ Os campos `resumoAnimal` e `resumoAdotante` são uma **cópia dos dados no momen
 | `POST` | `/adocoes` | Registrar solicitação (RF10, RF11, RF12) | 201 + documento criado | 400, 404, 409, 422, 503 |
 | `GET` | `/adocoes` | Listar solicitações (RF13). Filtros opcionais: `animalId`, `adotanteId`, `status` | 200 + array | |
 | `GET` | `/adocoes/:id` | Consultar uma solicitação (RF13) | 200 + documento | 400, 404 |
+| `PATCH` | `/adocoes/:id/status` | Marcar o andamento no painel. Corpo: `{ "status": "Em contato" }` | 200 + documento atualizado | 400 (status fora da lista), 404 |
+
+**Status possíveis:** `"Pendente"` (padrão ao registrar), `"Em contato"`, `"Concluído"`. *Incluídos pelo painel administrativo (PR #6); falta a Pessoa 1 confirmar se entram nos requisitos (E23).*
 
 **Corpo de `POST /adocoes`:**
 ```json
@@ -319,4 +334,6 @@ Os campos `resumoAnimal` e `resumoAdotante` são uma **cópia dos dados no momen
 ### Regras definidas
 
 - **Sem solicitação duplicada:** o mesmo adotante não pode ter duas solicitações `"Pendente"` para o mesmo animal. A segunda tentativa retorna **409** (passo 4 do fluxo).
+- **Ids em formato inválido:** `animalId` ou `adotanteId` que não são ObjectId (24 caracteres hexadecimais) → **400**, antes de chamar os outros serviços (E02).
+- **Resposta inesperada dos outros serviços:** se Animais ou Adotantes responderem algo diferente de `200`/`404` (ex.: `503` porque o banco deles caiu), Adoções responde **503**.
 - **A solicitação não altera o animal:** registrar uma solicitação **não** muda `disponivel` para `false`. Nesta versão não existe aprovação (RF12), então o animal continua disponível e pode receber solicitações de outros adotantes. A disponibilidade só muda pela rota `PATCH /animais/:id/disponibilidade`.

@@ -33,6 +33,10 @@ app.use((req, res) => {
 
 // Evita expor detalhes internos do erro na resposta HTTP.
 app.use((erro, req, res, next) => {
+  // Corpo da requisição com JSON malformado
+  if (erro.type === 'entity.parse.failed') {
+    return res.status(400).json({ erro: 'JSON inválido no corpo da requisição.' });
+  }
   console.error(erro);
   res.status(500).json({ erro: 'Erro interno no servidor.' });
 });
