@@ -30,11 +30,12 @@ Detalhes nas [evidências](../relatorio/evidencias/testes/).
 | E06 | Média | Containers em UTC: entre 21h e 0h, a regra dos 21 anos usa o dia seguinte | Pessoa 3 (e Pessoa 4) | CT45, CT46 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
 | E01 | Média | JSON malformado retorna 500 em vez de 400 | Pessoas 6 e 7 | CT05 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
 | E20 | Média | Porta 80 exposta no compose para o `/admin` funcionar | Pessoa 3 / Pessoa 4 | CM01 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
-| E21 | Média | Login só na tela: a senha está no código e as APIs não exigem login | Pessoa 1 (documentar) | CF14 | A decidir |
+| E21 | Média | Login só na tela: a senha está no código e as APIs não exigem login | Pessoa 1 (documentar) | CF14 | **Documentado** (22/10: limitação do protótipo, relatório 12.2) |
 | E22 | Média | O site público baixa a lista de **todos** os interessados para tratar e-mail repetido | Pessoas 4 e 6 | CF13 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
-| E23 | Documentação | Status "Em contato"/"Concluído" e `PATCH /adocoes/:id/status` não estão no contrato nem nos requisitos | Pessoas 7 e 1 | CT53 | A decidir (rota já documentada no contrato) |
+| E23 | Documentação | Status "Em contato"/"Concluído" e `PATCH /adocoes/:id/status` não estão no contrato nem nos requisitos | Pessoas 7 e 1 | CT53 | **Documentado** (22/10: incluído no escopo como andamento informativo; confirmar com a Pessoa 1) |
 | E14 | Baixa | Selo "Vacinado" aparece em todos os animais | Pessoa 4 | CF01 | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
 | E15 | Baixa | Dados dos animais inseridos no HTML sem escapar | Pessoa 4 | — | **Corrigido** (22/10, ver [correções](correcoes-integracao.md)) |
+| E24 | Baixa | A tela "Formulário enviado!" aparece deslocada para a esquerda, cortando o painel roxo | Pessoa 4 | CF06 | **Corrigido** (22/10, `overflow: clip`) |
 | E16 | Documentação | O site se chama "Aumigo" e o projeto se chamava "AdotaPet" | Pessoas 1 e 2 | — | **Corrigido** (22/10: o nome é Aumigo) |
 | E10 | — | Questionário incompleto no formulário | Pessoa 4 | CF05 | **Fechado** |
 | E12 | — | Microsserviço de Animais fora da `main` | Pessoa 5 | — | **Fechado** (PR #4) |
@@ -111,6 +112,7 @@ Encontrado na revisão do `frontend/js/admin.js`:
   - O "login" é só uma marca no `sessionStorage`.
   - As APIs não verificam login: qualquer um pode chamar `POST /animais` ou `PATCH /adocoes/:id/status` direto.
 - **Sugestão:** registrar na seção de escopo/arquitetura que a autenticação real (backend, senha com hash, token) fica para versões futuras.
+- **Situação (22/10):** registrado no relatório técnico como limitação do protótipo (seções 4.1 e 12.2).
 
 ## E22 — O site público baixa todos os interessados (Média, RNF10)
 
@@ -121,6 +123,7 @@ Encontrado na revisão do `frontend/js/admin.js`:
 
 - O PR #6 acrescentou os status `"Em contato"` e `"Concluído"` e a rota `PATCH /adocoes/:id/status` (testada no CT53: funciona). O contrato e os requisitos revisados não citam isso. O escopo diz que não haverá "acompanhamento individual das solicitações nem etapas de aprovação ou recusa".
 - **Ação:** Pessoa 7 documenta a rota no `contrato-api.md`. Pessoa 1 decide se ela entra nos requisitos (ex.: "o administrador pode marcar o andamento do contato") ou se é removida.
+- **Situação (22/10):** o relatório técnico (seção 3) passou a descrever o andamento como apoio à organização da equipe, apenas informativo, sem aprovação ou recusa. Falta a Pessoa 1 confirmar.
 
 ## E14 — Selo "Vacinado" fixo (Baixa)
 
@@ -129,6 +132,12 @@ Encontrado na revisão do `frontend/js/admin.js`:
 ## E15 — Dados inseridos no HTML sem escapar (Baixa)
 
 - `app.js` e `admin.js` montam cards e tabelas com `innerHTML` usando dados da API. Um animal com nome `<img src=x onerror=alert(1)>` executaria código no site e no painel. Usar `textContent` ou uma função `escapeHtml()`.
+
+## E24 — Tela de confirmação deslocada (Baixa)
+
+- Encontrado em 22/10, durante os prints do relatório. Depois de enviar o formulário, o contêiner `.adopt-page` fica com `scrollLeft` de cerca de 120 px e a tela "Formulário enviado!" aparece cortada à esquerda.
+- **Causa:** `.adopt-page` usa `overflow: hidden`, que ainda permite rolagem por código ou pelo navegador. Os enfeites de fundo (`.glow-left-adopt`, com `left: -120px`) ficam para fora da borda, e o navegador rola o contêiner ao mostrar a tela de sucesso.
+- **Correção (22/10):** em `frontend/css/style.css`, `.adopt-page` ganhou `overflow: clip;` logo depois de `overflow: hidden;`. O `clip` corta o conteúdo sem permitir rolagem. Testado de novo: a tela de sucesso aparece inteira (`scrollLeft` 0).
 
 ## E16 — Nome do projeto: "Aumigo" x "AdotaPet"
 
