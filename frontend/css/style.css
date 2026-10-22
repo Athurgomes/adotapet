@@ -923,6 +923,8 @@ button {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
+  /* clip corta os enfeites sem permitir rolagem (hidden deixava a tela de sucesso deslocada, E24) */
+  overflow: clip;
   background-color: var(--color-cream);
   padding: 32px 16px 48px;
 }
