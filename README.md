@@ -36,7 +36,7 @@ Não é preciso instalar Node.js nem MongoDB: tudo roda dentro dos containers.
 
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/SEU_USUARIO/adotapet.git
+git clone https://github.com/Athurgomes/adotapet.git
 cd adotapet
 
 # 2. Criar o .env a partir do modelo e colar as strings recebidas
@@ -68,6 +68,17 @@ Se a página mostrar os 3 serviços **"no ar"** e **"conectado"**, o ambiente es
 | `docker compose logs -f animais` | Acompanhar os logs de um serviço |
 | `docker compose restart adocoes` | Reiniciar um serviço |
 | `docker compose stop animais` | Derrubar só um serviço (bom para demonstrar a independência na apresentação) |
+
+### Testes de integração
+
+Com o projeto no ar, em outro terminal:
+
+```bash
+docker compose run --rm testes            # fluxo completo + cenários de erro
+docker compose run --rm testes --queda    # depois de "docker compose stop animais" (ou adotantes)
+```
+
+O resultado (PASSOU / FALHOU / PENDENTE) aparece no terminal e as evidências ficam em `tests/resultados/`. Rotas ainda não implementadas aparecem como **PENDENTE**. Detalhes no [plano de testes](docs/testes/plano-de-testes.md).
 
 ### Desenvolvimento
 
@@ -106,9 +117,13 @@ adotapet/
 │   │       └── routes/      # Rotas do serviço (stubs que respondem 501)
 │   ├── adotantes/           # Pessoa 6 (mesma estrutura)
 │   └── adocoes/             # Pessoa 7 (mesma estrutura)
+├── tests/                   # Pessoa 9
+│   └── integracao.js        # Testes de integração (docker compose run --rm testes)
 └── docs/
     ├── contrato-api.md        # Campos, rotas e JSON combinados entre os serviços
-    └── guia-banco-de-dados.md # Como conectar no MongoDB Atlas e quem usa cada acesso
+    ├── guia-banco-de-dados.md # Como conectar no MongoDB Atlas e quem usa cada acesso
+    ├── testes/                # Plano de testes e registro de erros
+    └── relatorio/             # Relatório técnico e evidências (prints)
 ```
 
 ## Variáveis de ambiente
@@ -140,3 +155,5 @@ Definidas no `docker-compose.yml`. Só as connection strings vêm do `.env`.
 
 - [Contrato de API](docs/contrato-api.md): **leitura obrigatória antes de programar**
 - [Guia rápido do banco de dados](docs/guia-banco-de-dados.md): **leitura obrigatória antes de rodar**
+- [Plano de testes](docs/testes/plano-de-testes.md) e [registro de erros](docs/testes/registro-de-erros.md)
+- [Relatório técnico](docs/relatorio/relatorio-tecnico.md) (esqueleto e status das contribuições)
