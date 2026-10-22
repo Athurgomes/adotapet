@@ -1,4 +1,4 @@
-# AdotaPet — Plataforma Comunitária de Adoção de Animais
+# Aumigo — Plataforma Comunitária de Adoção de Animais
 
 Site para cadastrar animais disponíveis para adoção, cadastrar interessados e registrar solicitações de adoção. A arquitetura usa **3 microsserviços independentes**, cada um com o próprio banco no **MongoDB Atlas**.
 

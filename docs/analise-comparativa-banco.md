@@ -2,7 +2,7 @@
 
 ## 1. Objetivo
 
-Esta análise apresenta a utilização do MongoDB no projeto AdotaPet e
+Esta análise apresenta a utilização do MongoDB no projeto Aumigo e
 compara essa abordagem com uma modelagem relacional equivalente em
 PostgreSQL.
 
@@ -16,7 +16,7 @@ O MongoDB é um banco de dados NoSQL orientado a documentos. Os dados são
 armazenados em documentos BSON, semelhantes a objetos JSON, agrupados em
 coleções.
 
-No AdotaPet, cada microsserviço possui um banco lógico próprio:
+No Aumigo, cada microsserviço possui um banco lógico próprio:
 
 | Microsserviço | Banco | Coleção |
 |---|---|---|
@@ -386,7 +386,7 @@ seria necessário usar colunas adicionais ou `JSONB`.
 
 ### MongoDB
 
-As principais vantagens observadas para o AdotaPet são:
+As principais vantagens observadas para o Aumigo são:
 
 - armazenamento natural de objetos e arrays;
 - flexibilidade no campo `caracteristicas`;
@@ -416,7 +416,7 @@ campos específicos por espécie.
 
 ## 8. Conclusão
 
-O MongoDB é adequado ao AdotaPet porque os documentos possuem estruturas
+O MongoDB é adequado ao Aumigo porque os documentos possuem estruturas
 semiestruturadas. O campo `caracteristicas` pode variar conforme a espécie,
 enquanto `vacinas` e `questionario` são armazenados como estruturas
 incorporadas. Os resumos de uma solicitação também podem ser preservados no

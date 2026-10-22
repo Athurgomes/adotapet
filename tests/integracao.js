@@ -1,4 +1,4 @@
-// Testes de integração do AdotaPet (responsável: Pessoa 9).
+// Testes de integração do Aumigo (responsável: Pessoa 9).
 //
 // Executa o fluxo completo (animal -> adotante -> solicitação -> consulta) e os
 // cenários de erro contra os 3 microsserviços, seguindo o docs/contrato-api.md.
@@ -161,7 +161,7 @@ function idadeEsperada(data) {
 // Dados fictícios (RNF09). O sufixo "(teste ...)" facilita a limpeza depois.
 // ---------------------------------------------------------------------------
 
-const IMAGEM = 'https://placehold.co/600x400?text=AdotaPet';
+const IMAGEM = 'https://placehold.co/600x400?text=Aumigo';
 
 const dados = {
   cachorro: {
@@ -719,7 +719,7 @@ async function executar() {
     casosAdocoes();
   }
 
-  console.log(`\nAdotaPet — testes de integração (${MODO_QUEDA ? 'serviço fora do ar' : 'fluxo completo'})`);
+  console.log(`\nAumigo — testes de integração (${MODO_QUEDA ? 'serviço fora do ar' : 'fluxo completo'})`);
   console.log(Object.entries(URLS).map(([s, u]) => `  ${s}: ${u}`).join('\n'), '\n');
 
   for (const c of casos) {
@@ -756,7 +756,7 @@ async function executar() {
 function gravarRelatorio(contagem) {
   const linhas = [];
   const dataHora = INICIO.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-  linhas.push('# Resultado dos testes de integração — AdotaPet', '');
+  linhas.push('# Resultado dos testes de integração — Aumigo', '');
   linhas.push(`- **Executado em:** ${dataHora}`);
   linhas.push(`- **Modo:** ${MODO_QUEDA ? 'serviço fora do ar (--queda)' : 'fluxo completo + cenários de erro'}`);
   linhas.push(`- **URLs:** ${Object.entries(URLS).map(([s, u]) => `${s} = ${u}`).join(', ')}`);

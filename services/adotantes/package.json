@@ -1,7 +1,7 @@
 {
   "name": "adotapet-adotantes",
   "version": "1.0.0",
-  "description": "Microsserviço de Adotantes do AdotaPet",
+  "description": "Microsserviço de Adotantes do Aumigo",
   "main": "src/server.js",
   "private": true,
   "scripts": {

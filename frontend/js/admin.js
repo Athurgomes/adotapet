@@ -1,5 +1,5 @@
 /**
- * ADOTAPET / AUMIGO — LÓGICA DO PAINEL ADMINISTRATIVO (VANILLA JS)
+ * AUMIGO — LÓGICA DO PAINEL ADMINISTRATIVO (VANILLA JS)
  * Implementação Fiel dos Componentes React e Integração com Microsserviços
  */
 

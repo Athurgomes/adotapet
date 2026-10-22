@@ -1,5 +1,5 @@
 /**
- * Configuração das APIs do AdotaPet (RNF02, RNF03, RNF04)
+ * Configuração das APIs do Aumigo (RNF02, RNF03, RNF04)
  */
 const CONFIG = {
   API_ANIMAIS: "http://localhost:3001",

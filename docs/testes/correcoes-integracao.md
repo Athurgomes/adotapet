@@ -1,4 +1,4 @@
-# Correções feitas na integração — AdotaPet
+# Correções feitas na integração — Aumigo
 
 > **Responsável:** Pessoa 9 (Integração, Testes e Documentação), 22/10/2026.
 > Todas as correções vieram de falhas encontradas nos testes (ver [registro de erros](registro-de-erros.md)) e foram testadas de novo depois de aplicadas.
@@ -68,7 +68,7 @@
 |---|---|---|
 | E21 | O login do painel é só de interface: a senha está no `admin.js` e as APIs não exigem login. Atende ao RF11 (tela de login), mas precisa ir para o relatório como limitação do protótipo | Pessoa 1 |
 | E23 | Status "Em contato" e "Concluído" no painel: não estão nos requisitos revisados (agora documentados no contrato) | Pessoa 1 |
-| E16 | Nome do site: "Aumigo" ou "AdotaPet" | Pessoas 1 e 2 |
+| E16 | Nome do site: "Aumigo" ou "AdotaPet" — **decidido em 22/10: Aumigo** | Pessoas 1 e 2 |
 
 ## Como conferir
 
