@@ -9,6 +9,10 @@
 //   docker compose run --rm testes --queda    -> serviço fora do ar (pare um serviço antes)
 //   node tests/integracao.js [--queda]        -> o mesmo, com Node 18+ instalado
 //
+// Os serviços se comunicam pelo Kafka: um animal ou adotante recém-criado leva
+// alguns milissegundos para chegar à réplica do serviço de Adoções. Os casos que
+// dependem disso esperam a propagação (função aguardarPropagacao).
+//
 // Resultados possíveis de cada caso:
 //   PASSOU    -> comportamento igual ao contrato
 //   FALHOU    -> comportamento diferente do contrato (registrar em docs/testes/registro-de-erros.md)
@@ -108,6 +112,30 @@ function esperarErro(r, esperado, contexto) {
 function precisa(valor, descricao) {
   if (!valor) throw new Bloqueado(`depende de: ${descricao}`);
 }
+
+const pausa = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Tempo para os eventos publicados no Kafka chegarem às réplicas de Adoções.
+const ESPERA_PROPAGACAO_MS = 2000;
+async function aguardarPropagacao() {
+  await pausa(ESPERA_PROPAGACAO_MS);
+}
+
+// Solicita a adoção repetindo enquanto a réplica ainda não recebeu o animal ou o
+// adotante (404). Usado só nos casos em que o esperado é 201.
+async function solicitarComEspera(corpo, tentativas = 20) {
+  let r;
+  for (let i = 0; i < tentativas; i += 1) {
+    r = await chamar('adocoes', 'POST', '/adocoes', corpo);
+    if (r.status !== 404) return r;
+    await pausa(250);
+  }
+  return r;
+}
+
+// Dados guardados pelo fluxo completo para serem usados no modo --queda,
+// quando o serviço de Animais ou de Adotantes já estiver parado.
+const ARQUIVO_CONTEXTO_QUEDA = path.join(PASTA_RESULTADOS, 'contexto-queda.json');
 
 function resumir(valor, limite = 2000) {
   const texto = typeof valor === 'string' ? valor : JSON.stringify(valor, null, 2);
@@ -269,12 +297,18 @@ function casosAmbiente() {
     verificar(problemas.length === 0, problemas.join('; '));
   });
 
-  caso('CT02', 'Adoções alcança Animais e Adotantes via HTTP', ['RNF04'], async () => {
+  caso('CT02', 'Os 3 serviços estão conectados ao Kafka', ['RNF04'], async () => {
+    const problemas = [];
+    for (const servico of Object.keys(URLS)) {
+      const r = await chamar(servico, 'GET', '/health');
+      if (r.dados?.kafka !== 'conectado') problemas.push(`${servico}: kafka "${r.dados?.kafka}"`);
+    }
+    verificar(problemas.length === 0, problemas.join('; '));
     const r = await chamar('adocoes', 'GET', '/health');
-    esperarStatus(r, 200, 'GET /health');
-    const dep = r.dados?.dependencias || {};
-    verificar(dep.animais === 'no ar', `Adoções vê Animais como "${dep.animais}"`);
-    verificar(dep.adotantes === 'no ar', `Adoções vê Adotantes como "${dep.adotantes}"`);
+    verificar(
+      r.dados?.replicas && 'animais' in r.dados.replicas && 'adotantes' in r.dados.replicas,
+      'o /health de Adoções não mostra as réplicas'
+    );
   });
 
   caso('CT03', 'CORS liberado para o frontend (localhost:5500)', ['RNF01'], async () => {
@@ -534,9 +568,18 @@ function casosAdotantes() {
 // ---------------------------------------------------------------------------
 
 function casosAdocoes() {
+  caso('CT39', 'Animais e adotantes cadastrados chegam à réplica de Adoções pelo Kafka', ['RNF04', 'RNF06'], async () => {
+    precisa(ctx.cachorro && ctx.maria, 'CT10 e CT30');
+    await aguardarPropagacao();
+    const r = await chamar('adocoes', 'GET', '/health');
+    esperarStatus(r, 200, 'GET /health de Adoções');
+    verificar(r.dados?.replicas?.animais > 0, `réplica de animais vazia (${r.dados?.replicas?.animais})`);
+    verificar(r.dados?.replicas?.adotantes > 0, `réplica de adotantes vazia (${r.dados?.replicas?.adotantes})`);
+  });
+
   caso('CT40', 'Solicitar adoção válida (status Pendente + resumos)', ['RF08', 'RF09', 'RF10'], async () => {
     precisa(ctx.cachorro && ctx.maria, 'CT10 e CT30');
-    const r = await chamar('adocoes', 'POST', '/adocoes', { animalId: ctx.cachorro, adotanteId: ctx.maria });
+    const r = await solicitarComEspera({ animalId: ctx.cachorro, adotanteId: ctx.maria });
     esperarStatus(r, 201, 'POST /adocoes');
     const s = r.dados;
     verificar(typeof s?._id === 'string', 'resposta sem _id');
@@ -585,7 +628,7 @@ function casosAdocoes() {
 
   caso('CT45', 'Interessado com exatamente 21 anos pode solicitar o mesmo animal', ['RF07', 'RF10'], async () => {
     precisa(ctx.cachorro && ctx.limite, 'CT10 e CT30');
-    const r = await chamar('adocoes', 'POST', '/adocoes', { animalId: ctx.cachorro, adotanteId: ctx.limite });
+    const r = await solicitarComEspera({ animalId: ctx.cachorro, adotanteId: ctx.limite });
     esperarStatus(r, 201, 'POST /adocoes (21 anos hoje)');
   });
 
@@ -658,6 +701,17 @@ function casosAdocoes() {
       verificar(!texto.includes(adotante.nomeCompleto), `o nome ${adotante.nomeCompleto} aparece no catálogo`);
     }
   });
+
+  caso('CT54', 'Prepara um animal e um adotante para o teste de serviço fora do ar', ['RNF06'], async () => {
+    precisa(ctx.maria, 'CT30');
+    const animal = await chamar('animais', 'POST', '/animais', { ...dados.cachorro, nome: `Reserva queda (teste ${MARCA})` });
+    esperarStatus(animal, 201, 'POST /animais');
+    fs.mkdirSync(PASTA_RESULTADOS, { recursive: true });
+    fs.writeFileSync(
+      ARQUIVO_CONTEXTO_QUEDA,
+      JSON.stringify({ animalId: animal.dados._id, adotanteId: ctx.maria, criadoEm: MARCA }, null, 2)
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -665,36 +719,41 @@ function casosAdocoes() {
 // ---------------------------------------------------------------------------
 
 function casosQueda() {
-  caso('CQ01', 'Adoções detecta o serviço parado', ['RNF02', 'RNF04'], async () => {
-    const r = await chamar('adocoes', 'GET', '/health');
-    esperarStatus(r, 200, 'GET /health de Adoções');
-    ctx.dependencias = r.dados?.dependencias || {};
-    const parados = Object.entries(ctx.dependencias).filter(([, estado]) => estado !== 'no ar');
+  caso('CQ01', 'Identifica o serviço parado', ['RNF02', 'RNF04'], async () => {
+    ctx.parados = [];
+    for (const servico of ['animais', 'adotantes']) {
+      try {
+        const r = await chamar(servico, 'GET', '/health');
+        if (r.status !== 200) ctx.parados.push(servico);
+      } catch {
+        ctx.parados.push(servico);
+      }
+    }
     verificar(
-      parados.length > 0,
+      ctx.parados.length > 0,
       'nenhum serviço parado. Antes de usar --queda, rode "docker compose stop animais" (ou adotantes)'
     );
+    const r = await chamar('adocoes', 'GET', '/health');
+    esperarStatus(r, 200, 'GET /health de Adoções');
+    verificar(r.dados?.kafka === 'conectado', `Adoções está com o Kafka "${r.dados?.kafka}"`);
   });
 
-  caso('CQ02', 'Com Animais fora do ar, a solicitação retorna 503', ['RF10', 'RNF08'], async () => {
-    precisa(ctx.dependencias?.animais && ctx.dependencias.animais !== 'no ar', 'Animais parado');
-    const r = await chamar('adocoes', 'POST', '/adocoes', { animalId: idFalso(), adotanteId: idFalso() });
-    esperarErro(r, 503, 'Animais fora do ar');
+  caso('CQ02', 'Com Animais ou Adotantes fora do ar, a solicitação continua sendo registrada', ['RF10', 'RNF06'], async () => {
+    precisa(ctx.parados?.length, 'CQ01');
+    precisa(fs.existsSync(ARQUIVO_CONTEXTO_QUEDA), 'rodar antes o fluxo completo (docker compose run --rm testes)');
+    const { animalId, adotanteId } = JSON.parse(fs.readFileSync(ARQUIVO_CONTEXTO_QUEDA, 'utf8'));
+    const r = await chamar('adocoes', 'POST', '/adocoes', { animalId, adotanteId });
+    esperarStatus(r, 201, `POST /adocoes com ${ctx.parados.join(' e ')} fora do ar`);
+    verificar(r.dados?.resumoAnimal?.nome && r.dados?.resumoAdotante?.nomeCompleto, 'resumos vazios na solicitação');
+    // Conclui a solicitação para que o teste possa ser repetido com os mesmos dados
+    const fim = await chamar('adocoes', 'PATCH', `/adocoes/${r.dados._id}/status`, { status: 'Concluído' });
+    esperarStatus(fim, 200, 'PATCH /adocoes/:id/status');
   });
 
-  caso('CQ03', 'Com Adotantes fora do ar, a solicitação retorna 503', ['RF10', 'RNF08'], async () => {
-    precisa(ctx.dependencias?.adotantes && ctx.dependencias.adotantes !== 'no ar', 'Adotantes parado');
-    precisa(ctx.dependencias.animais === 'no ar', 'Animais no ar (para criar um animal válido)');
-    const animal = await chamar('animais', 'POST', '/animais', { ...dados.cachorro, nome: `Queda (teste ${MARCA})` });
-    esperarStatus(animal, 201, 'POST /animais');
-    const r = await chamar('adocoes', 'POST', '/adocoes', { animalId: animal.dados._id, adotanteId: idFalso() });
-    esperarErro(r, 503, 'Adotantes fora do ar');
-  });
-
-  caso('CQ04', 'Os serviços que continuam no ar seguem respondendo', ['RNF02', 'RNF06'], async () => {
-    precisa(ctx.dependencias, 'CQ01');
-    for (const [servico, estado] of Object.entries(ctx.dependencias)) {
-      if (estado !== 'no ar') continue;
+  caso('CQ03', 'Os serviços que continuam no ar seguem respondendo', ['RNF02', 'RNF06'], async () => {
+    precisa(ctx.parados, 'CQ01');
+    for (const servico of ['animais', 'adotantes']) {
+      if (ctx.parados.includes(servico)) continue;
       const r = await chamar(servico, 'GET', `/${servico}`);
       esperarStatus(r, 200, `GET /${servico}`);
     }
