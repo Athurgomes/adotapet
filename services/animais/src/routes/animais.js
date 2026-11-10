@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Animal = require('../models/Animal');
 const { bancoConectado } = require('../db');
+const { publicarAnimal } = require('../eventos');
 
 const router = express.Router();
 
@@ -50,6 +51,7 @@ router.post('/', async (req, res) => {
   }
 
   const animal = await Animal.create(dados);
+  await publicarAnimal(animal);
   res.status(201).json(animal);
 });
 
@@ -111,6 +113,7 @@ router.put('/:id', async (req, res) => {
   }
 
   await animal.save();
+  await publicarAnimal(animal);
   res.json(animal);
 });
 
@@ -127,6 +130,7 @@ router.patch('/:id/disponibilidade', async (req, res) => {
     { new: true, runValidators: true }
   );
   if (!animal) return res.status(404).json({ erro: 'Animal não encontrado.' });
+  await publicarAnimal(animal);
   res.json(animal);
 });
 
