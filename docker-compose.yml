@@ -1,5 +1,6 @@
 # Aumigo: frontend + 3 microsserviços + Kafka, agrupados no projeto "projeto-adotapet".
 # Para subir tudo:  docker compose up --build
+# Com a interface do Kafka (http://localhost:8080):  docker compose --profile kafka-ui up --build
 # As connection strings do MongoDB Atlas ficam no arquivo .env (veja .env.example).
 #
 # Os microsserviços NÃO chamam as APIs uns dos outros: eles trocam eventos pelo Kafka.
@@ -53,6 +54,20 @@ services:
         criar adocoes.eventos
         echo "Tópicos prontos."
     restart: "no"
+
+  # Interface web para ver tópicos e mensagens (opcional, bom para a apresentação).
+  # Sobe só com:  docker compose --profile kafka-ui up
+  kafka-ui:
+    image: kafbat/kafka-ui:latest
+    profiles: [ "kafka-ui" ]
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: aumigo
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
