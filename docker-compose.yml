@@ -1,6 +1,10 @@
 # Aumigo: frontend + 3 microsserviços + Kafka, agrupados no projeto "projeto-adotapet".
 # Para subir tudo:  docker compose up --build
 # As connection strings do MongoDB Atlas ficam no arquivo .env (veja .env.example).
+#
+# Os microsserviços NÃO chamam as APIs uns dos outros: eles trocam eventos pelo Kafka.
+# Animais e Adotantes publicam o que mudou; Adoções consome e mantém uma cópia local
+# (réplica) com os dados de que precisa para validar as solicitações.
 
 name: projeto-adotapet
 
@@ -73,10 +77,14 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: animais_db
       MONGODB_URI: ${ANIMAIS_MONGODB_URI:?Defina ANIMAIS_MONGODB_URI no arquivo .env}
+      KAFKA_BROKERS: kafka:9092
     volumes:
       # Reinicia o serviço automaticamente ao salvar um arquivo em src/
       - ./services/animais/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
+    depends_on:
+      kafka-topicos:
+        condition: service_completed_successfully
     healthcheck: &healthcheck
       test: [ "CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1" ]
       interval: 15s
@@ -94,9 +102,13 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: adotantes_db
       MONGODB_URI: ${ADOTANTES_MONGODB_URI:?Defina ADOTANTES_MONGODB_URI no arquivo .env}
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - ./services/adotantes/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
+    depends_on:
+      kafka-topicos:
+        condition: service_completed_successfully
     healthcheck: *healthcheck
     restart: unless-stopped
 
@@ -110,16 +122,15 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: adocoes_db
       MONGODB_URI: ${ADOCOES_MONGODB_URI:?Defina ADOCOES_MONGODB_URI no arquivo .env}
-      # Dentro da rede do Docker, cada serviço é encontrado pelo próprio nome
-      ANIMAIS_API_URL: http://animais:3001
-      ADOTANTES_API_URL: http://adotantes:3002
+      # Adoções não chama as APIs de Animais e Adotantes: recebe os dados pelo Kafka
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - ./services/adocoes/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
     healthcheck: *healthcheck
     depends_on:
-      - animais
-      - adotantes
+      kafka-topicos:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Testes de integração (Pessoa 9). Não sobe com o "up". Com o projeto rodando:
