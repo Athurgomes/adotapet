@@ -1,6 +1,6 @@
 # Aumigo — Plataforma Comunitária de Adoção de Animais
 
-Site para cadastrar animais disponíveis para adoção, cadastrar interessados e registrar solicitações de adoção. A arquitetura usa **3 microsserviços independentes**, cada um com o próprio banco no **MongoDB Atlas**.
+Site para cadastrar animais disponíveis para adoção, cadastrar interessados e registrar solicitações de adoção. A arquitetura usa **3 microsserviços independentes**, cada um com o próprio banco no **MongoDB Atlas**. Os microsserviços **não chamam as APIs uns dos outros**: eles se comunicam por eventos no **Apache Kafka**.
 
 | Componente | Tecnologia | Porta | Banco | Responsável |
 |---|---|---|---|---|
@@ -8,19 +8,34 @@ Site para cadastrar animais disponíveis para adoção, cadastrar interessados e
 | Microsserviço de Animais | Node.js + Express + Mongoose | 3001 | `animais_db` | Pessoa 5 |
 | Microsserviço de Adotantes | Node.js + Express + Mongoose | 3002 | `adotantes_db` | Pessoa 6 |
 | Microsserviço de Adoções | Node.js + Express + Mongoose | 3003 | `adocoes_db` | Pessoa 7 |
+| Mensageria | Apache Kafka (KRaft, 1 nó) | 9092 (interna) | — | — |
+| Kafka UI (opcional) | kafbat/kafka-ui | 8080 | — | — |
 
 Tudo roda em containers Docker, agrupados no projeto **`projeto-adotapet`**.
 
 ```
-Navegador ──► frontend :5500
+Navegador ──HTTP──► frontend :5500
     │
-    ├──► animais   :3001 ──► Atlas: animais_db
-    ├──► adotantes :3002 ──► Atlas: adotantes_db
-    └──► adocoes   :3003 ──► Atlas: adocoes_db
-              │
-              ├──► HTTP: animais   (verifica existência e disponibilidade)
-              └──► HTTP: adotantes (verifica existência e idade mínima)
+    ├──HTTP──► animais   :3001 ──► Atlas: animais_db
+    ├──HTTP──► adotantes :3002 ──► Atlas: adotantes_db
+    └──HTTP──► adocoes   :3003 ──► Atlas: adocoes_db (+ réplicas de animais e adotantes)
+
+Entre os microsserviços, só eventos (Kafka):
+
+  animais   ──publica──► animais.eventos   ──┐
+  adotantes ──publica──► adotantes.eventos ──┴──► adocoes consome e atualiza as réplicas
+  adocoes   ──publica──► adocoes.eventos   (solicitação criada / status alterado)
 ```
+
+### Comunicação por eventos (Kafka)
+
+- Sempre que um animal é cadastrado ou alterado, o serviço de **Animais** publica o estado atual em `animais.eventos`. O de **Adotantes** faz o mesmo em `adotantes.eventos` a cada cadastro.
+- O serviço de **Adoções** consome esses tópicos e guarda, no **próprio banco**, uma cópia mínima (réplica) com o que precisa: disponibilidade do animal, data de nascimento do adotante e os campos dos resumos.
+- No `POST /adocoes`, a validação usa essas réplicas. **Não há chamada HTTP entre os serviços**, então uma solicitação pode ser registrada mesmo com Animais ou Adotantes fora do ar.
+- Os tópicos de animais e adotantes são **compactados** (o Kafka guarda o último evento de cada id) e cada serviço republica todos os seus registros ao iniciar. Assim, as réplicas podem ser reconstruídas a qualquer momento e nenhum evento perdido fica para trás.
+- **Consistência eventual:** um animal recém-cadastrado leva alguns milissegundos para chegar à réplica. É o preço da independência entre os serviços.
+
+Formato dos eventos e tópicos: [contrato de API, seção 4](docs/contrato-api.md#4-eventos-kafka).
 
 ---
 
@@ -53,7 +68,8 @@ Pronto:
 | <http://localhost:5500> | Site (por enquanto, uma página de status dos serviços) |
 | <http://localhost:3001/health> | Saúde do serviço de Animais |
 | <http://localhost:3002/health> | Saúde do serviço de Adotantes |
-| <http://localhost:3003/health> | Saúde do serviço de Adoções (mostra também se ele alcança os outros dois) |
+| <http://localhost:3003/health> | Saúde do serviço de Adoções (mostra também o Kafka e quantos registros há nas réplicas) |
+| <http://localhost:8080> | Kafka UI: tópicos e mensagens (só com `docker compose --profile kafka-ui up`) |
 
 Se a página mostrar os 3 serviços **"no ar"** e **"conectado"**, o ambiente está pronto.
 
@@ -68,6 +84,7 @@ Se a página mostrar os 3 serviços **"no ar"** e **"conectado"**, o ambiente es
 | `docker compose logs -f animais` | Acompanhar os logs de um serviço |
 | `docker compose restart adocoes` | Reiniciar um serviço |
 | `docker compose stop animais` | Derrubar só um serviço (bom para demonstrar a independência na apresentação) |
+| `docker compose --profile kafka-ui up -d` | Subir também a interface do Kafka (<http://localhost:8080>) |
 
 ### Testes de integração
 
@@ -101,7 +118,7 @@ O resultado (PASSOU / FALHOU / PENDENTE) aparece no terminal e as evidências fi
 
 ```
 adotapet/
-├── docker-compose.yml       # Orquestra os 4 containers (projeto-adotapet)
+├── docker-compose.yml       # Orquestra os containers, incluindo o Kafka (projeto-adotapet)
 ├── .env.example             # Modelo das variáveis de ambiente (o .env real NÃO vai para o Git)
 ├── frontend/                # Pessoa 4
 │   ├── index.html
@@ -135,10 +152,9 @@ Definidas no `docker-compose.yml`. Só as connection strings vêm do `.env`.
 | `PORT` | todos | 3001 / 3002 / 3003 |
 | `DB_NAME` | todos | `animais_db` / `adotantes_db` / `adocoes_db` |
 | `MONGODB_URI` | todos | Vem de `ANIMAIS_MONGODB_URI`, `ADOTANTES_MONGODB_URI` e `ADOCOES_MONGODB_URI` no `.env` |
-| `ANIMAIS_API_URL` | adocoes | `http://animais:3001` (nome do serviço na rede do Docker) |
-| `ADOTANTES_API_URL` | adocoes | `http://adotantes:3002` |
+| `KAFKA_BROKERS` | todos | `kafka:9092` (nome do serviço na rede do Docker) |
 
-> Entre containers, use o **nome do serviço** (`http://animais:3001`). No navegador (frontend), use **`localhost`** (`http://localhost:3001`).
+> Os microsserviços não precisam saber o endereço uns dos outros: só o do Kafka. No navegador (frontend), as APIs continuam em **`localhost`** (`http://localhost:3001`).
 
 ## Problemas comuns
 
@@ -150,6 +166,8 @@ Definidas no `docker-compose.yml`. Só as connection strings vêm do `.env`.
 | Serviço "no ar", mas banco "desconectado" | Veja os logs (`docker compose logs animais`) e o [guia do banco](docs/guia-banco-de-dados.md#problemas-comuns). |
 | Mudei o `package.json` e nada aconteceu | Rode `docker compose up --build`. |
 | Rota responde `501` | Normal: a rota ainda não foi implementada. |
+| `kafka: "desconectado"` no `/health` logo ao subir | O Kafka leva uns 20 segundos para ficar pronto; os serviços tentam de novo a cada 5 segundos. |
+| Solicitação de um animal recém-cadastrado responde `404` | A réplica ainda não recebeu o evento. Espere um instante e tente de novo; se persistir, veja `docker compose logs adocoes`. |
 
 ## Documentação
 

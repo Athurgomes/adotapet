@@ -39,7 +39,7 @@ Pré-requisito: projeto rodando (`docker compose up --build`) e `.env` configura
 docker compose run --rm testes
 ```
 
-Para o cenário de serviço fora do ar:
+Para o cenário de serviço fora do ar (depois de rodar o fluxo completo pelo menos uma vez):
 
 ```bash
 docker compose stop animais
@@ -67,7 +67,7 @@ O resultado aparece no terminal e é salvo em `tests/resultados/integracao-AAAAM
 | ID | Caso | Esperado | Requisitos |
 |---|---|---|---|
 | CT01 | Os 3 serviços estão no ar e conectados ao banco | `/health` com `banco: "conectado"` | RNF02, RNF05 |
-| CT02 | Adoções alcança Animais e Adotantes | `dependencias` com os dois `"no ar"` | RNF04 |
+| CT02 | Os 3 serviços estão conectados ao Kafka | `kafka: "conectado"` em todos; Adoções mostra `replicas` | RNF04 |
 | CT03 | CORS liberado para o frontend | `Access-Control-Allow-Origin` presente | RNF01 |
 | CT04 | Rota inexistente | `404` + `{ "erro": ... }` | RNF08 |
 | CT05 | JSON malformado no corpo | `400` (e não `500`) | RNF08 |
@@ -109,6 +109,7 @@ O resultado aparece no terminal e é salvo em `tests/resultados/integracao-AAAAM
 
 | ID | Caso | Esperado | Requisitos |
 |---|---|---|---|
+| CT39 | Animais e adotantes chegam à réplica de Adoções pelo Kafka | `replicas.animais` e `replicas.adotantes` maiores que zero | RNF04, RNF06 |
 | CT40 | Solicitação válida | `201`, `status: "Pendente"`, `resumoAnimal` e `resumoAdotante` iguais aos dados de origem | RF08, RF09, RF10 |
 | CT41 | Consultar solicitação por id | `200` com os resumos persistidos | RF09, RF13 |
 | CT42 | Listar com filtros `animalId`, `adotanteId`, `status` | Só resultados do filtro | RF13 |
@@ -123,15 +124,17 @@ O resultado aparece no terminal e é salvo em `tests/resultados/integracao-AAAAM
 | CT51 | Consultar solicitação com id inválido / inexistente | `400` / `404` | RF13, RNF08 |
 | CT53 | Alterar o status no painel (`PATCH /adocoes/:id/status`, rota extra) | `200` e persistido; status fora da lista `400`; inexistente `404` | RF13 (ver E23) |
 | CT52 | Catálogo não mostra dados de interessados | Nome e e-mail não aparecem em `GET /animais` | RNF10 |
+| CT54 | Prepara dados para o teste `--queda` | Cria um animal reserva e salva os ids em `tests/resultados/contexto-queda.json` | RNF06 |
 
 ### 4.4 Serviço fora do ar (`--queda`)
 
 | ID | Caso | Esperado | Requisitos |
 |---|---|---|---|
-| CQ01 | Adoções detecta o serviço parado | `/health` mostra a dependência `"fora do ar"` | RNF02, RNF04 |
-| CQ02 | Animais parado → solicitar adoção | `503` + `erro` | RF10, RNF08 |
-| CQ03 | Adotantes parado → solicitar adoção | `503` + `erro` | RF10, RNF08 |
-| CQ04 | Os outros serviços continuam respondendo | `200` nas listagens | RNF02, RNF06 |
+| CQ01 | Identifica o serviço parado | Animais ou Adotantes sem resposta no `/health`; Adoções com `kafka: "conectado"` | RNF02, RNF04 |
+| CQ02 | Animais ou Adotantes parado → solicitar adoção | **`201`**: a solicitação é registrada com os dados das réplicas (antes do Kafka, era `503`) | RF10, RNF06 |
+| CQ03 | Os outros serviços continuam respondendo | `200` nas listagens | RNF02, RNF06 |
+
+> O CQ02 usa o animal e o adotante preparados pelo CT54. Rode o fluxo completo pelo menos uma vez antes do `--queda`.
 
 ## 5. Roteiro manual (navegador)
 
@@ -192,16 +195,16 @@ Requisitos **revisados** (21/10/2026):
 | RF07 Idade mínima | CT31, CT45, CT46, CF09 |
 | RF08 Solicitação de adoção | CT40, CF06 |
 | RF09 Registro da solicitação | CT40, CT41, CT43, CM03, CM05 |
-| RF10 Validação da solicitação | CT31, CT36, CT40, CT44–CT48, CQ02, CQ03, CF09 |
+| RF10 Validação da solicitação | CT31, CT36, CT40, CT44–CT48, CQ02, CF09 |
 | RF11 Login administrativo | CF14, CF18 (ver E21) |
 | RF12 Edição de animais | CT22, CT23, CF16 |
 | RF13 Consulta de solicitações no painel | CT32, CT41, CT42, CT51, CT53, CF17 |
 | RNF01 Aplicação web | CT03, CF12 |
-| RNF02 Microsserviços | CT01, CQ01, CQ04, CF10, CM01 |
+| RNF02 Microsserviços | CT01, CQ01, CQ03, CF10, CM01 |
 | RNF03 Node.js + Express | CM07 |
-| RNF04 Comunicação REST | CT02, CQ01, CM06 |
+| RNF04 Comunicação entre os serviços (eventos no Kafka) | CT02, CT39, CQ01, CM06 |
 | RNF05 MongoDB, um banco por serviço | CT01, CT11, CM02, CM03 |
-| RNF06 Independência dos serviços | CQ04, CM04, CM06 |
+| RNF06 Independência dos serviços | CT39, CT54, CQ02, CQ03, CM04, CM06 |
 | RNF07 Interface responsiva | CF11 |
 | RNF08 Validação e erros | CT04, CT05, CT16, CT17, CT21, CT23, CT33–CT36, CT49–CT51, CF08, CF10, CF15 |
 | RNF09 Dados fictícios | Todos os dados de teste são fictícios; nenhum caso pede CPF/RG |
