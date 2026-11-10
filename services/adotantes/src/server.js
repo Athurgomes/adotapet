@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { conectarBanco, bancoConectado } = require('./db');
+const { conectarKafka, kafkaConectado } = require('./eventos');
 const adotantesRoutes = require('./routes/adotantes');
 
 const SERVICO = 'adotantes';
@@ -14,12 +15,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Verifica se o serviço está no ar e se o banco está conectado.
+// Verifica se o serviço está no ar e se o banco e o Kafka estão conectados.
 app.get('/health', (req, res) => {
   res.json({
     servico: SERVICO,
     status: 'ok',
     banco: bancoConectado() ? 'conectado' : 'desconectado',
+    kafka: kafkaConectado() ? 'conectado' : 'desconectado',
   });
 });
 
@@ -45,4 +47,5 @@ app.listen(PORT, () => {
   console.log(`[${SERVICO}] Rodando na porta ${PORT}`);
   // Inicia a conexão do banco junto com o servidor HTTP.
   conectarBanco(MONGODB_URI, DB_NAME);
+  conectarKafka();
 });
