@@ -174,10 +174,11 @@ Tirar print de cada passo, com a aba **Network** (F12) aberta quando houver envi
 |---|---|---|---|
 | CM01 | `docker compose ps` | 4 containers `running` (`healthy` nos serviços) | RNF02 |
 | CM02 | `/health` dos 3 serviços | "no ar" e "conectado" | RNF05 |
-| CM03 | Compass com `leitura_geral`: `animais_db.animais`, `adotantes_db.adotantes`, `adocoes_db.solicitacoes` | Documentos criados pelos testes e pelo site, com estruturas diferentes em `caracteristicas` | RNF05, RF09 |
+| CM03 | Compass com `leitura_geral`: `animais_db.animais`, `adotantes_db.adotantes`, `adocoes_db.solicitacoes` e as réplicas `adocoes_db.replica_animais` / `replica_adotantes` | Documentos criados pelos testes e pelo site, com estruturas diferentes em `caracteristicas` | RNF05, RF09 |
 | CM04 | Conferir que cada serviço usa um usuário do Atlas com acesso só ao próprio banco | Documentado no [guia do banco](../guia-banco-de-dados.md) | RNF06 |
 | CM05 | `docker compose restart animais adotantes adocoes` e consultar de novo os registros | Dados continuam lá (persistência no Atlas) | RF04, RF09 |
-| CM06 | Revisar o código do serviço de Adoções | Só usa `fetch` para os outros serviços; nenhuma conexão com outro banco | RNF04, RNF06 |
+| CM06 | Revisar o código do serviço de Adoções | Nenhum `fetch` para os outros serviços: os dados vêm das réplicas, atualizadas pelo Kafka; nenhuma conexão com outro banco | RNF04, RNF06 |
+| CM08 | Kafka UI (`docker compose --profile kafka-ui up -d`, <http://localhost:8080>) | Os 3 tópicos existem; cadastrar um animal gera uma mensagem `AnimalSalvo` em `animais.eventos` | RNF04 |
 | CM07 | Revisar `package.json` dos serviços | Node.js + Express | RNF03 |
 
 ## 7. Matriz de rastreabilidade
@@ -202,7 +203,7 @@ Requisitos **revisados** (21/10/2026):
 | RNF01 Aplicação web | CT03, CF12 |
 | RNF02 Microsserviços | CT01, CQ01, CQ03, CF10, CM01 |
 | RNF03 Node.js + Express | CM07 |
-| RNF04 Comunicação entre os serviços (eventos no Kafka) | CT02, CT39, CQ01, CM06 |
+| RNF04 Comunicação entre os serviços (eventos no Kafka) | CT02, CT39, CQ01, CM06, CM08 |
 | RNF05 MongoDB, um banco por serviço | CT01, CT11, CM02, CM03 |
 | RNF06 Independência dos serviços | CT39, CT54, CQ02, CQ03, CM04, CM06 |
 | RNF07 Interface responsiva | CF11 |

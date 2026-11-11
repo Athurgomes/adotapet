@@ -399,7 +399,7 @@ As principais limitações são:
 - parte da validação depende da aplicação e do schema Mongoose;
 - não há `JOIN` entre os bancos dos microsserviços;
 - resumos duplicados exigem cuidado para preservar a consistência;
-- consultas que atravessam serviços dependem de chamadas HTTP.
+- dados de outro serviço precisam ser replicados por eventos (Kafka), com consistência eventual, já que não há consulta direta entre os bancos.
 
 ### PostgreSQL
 

@@ -11,9 +11,10 @@ Leia antes de começar a programar. Dúvidas de conexão: falar com a **Pessoa 3
 |---|---|---|---|
 | `animais_db` | `animais` | Animais | 3001 |
 | `adotantes_db` | `adotantes` | Adotantes | 3002 |
-| `adocoes_db` | `solicitacoes` | Adoções | 3003 |
+| `adocoes_db` | `solicitacoes`, `replica_animais`, `replica_adotantes` | Adoções | 3003 |
 
-- Cada microsserviço conecta com **um usuário próprio, que só tem acesso ao próprio banco**. Se o serviço de Adoções tentar gravar em `animais_db`, o Atlas bloqueia. É assim que garantimos o **RNF06**: para obter dados de outro serviço, chame a **API** dele (HTTP), nunca o banco.
+- Cada microsserviço conecta com **um usuário próprio, que só tem acesso ao próprio banco**. Se o serviço de Adoções tentar gravar em `animais_db`, o Atlas bloqueia. É assim que garantimos o **RNF06**: os dados de outro serviço chegam por **eventos no Kafka** e ficam em uma réplica no próprio banco (veja o [contrato, seção 4](contrato-api.md#4-eventos-kafka)). Nenhum serviço lê o banco de outro.
+- A permissão de cada usuário vale para o **banco inteiro**, sem restringir a uma coleção. Se o campo *Collection* for preenchido no Atlas, o serviço não consegue usar coleções novas (foi o que aconteceu com as réplicas de Adoções).
 
 ### Usuários
 
@@ -49,7 +50,7 @@ Você **não precisa** mexer em connection string no código: o `docker-compose.
 | **4 — Frontend** | Só o passo a passo acima. O frontend **nunca** acessa o banco: ele chama as APIs (`frontend/js/config.js`). |
 | **5 — Animais** | Passo a passo acima e criar os models Mongoose em `services/animais/src/`. A conexão já está pronta em `src/db.js`. |
 | **6 — Adotantes** | O mesmo, em `services/adotantes/src/`. |
-| **7 — Adoções** | O mesmo, em `services/adocoes/src/`. Para consultar animais e adotantes, use `fetch` com `process.env.ANIMAIS_API_URL` e `process.env.ADOTANTES_API_URL`. |
+| **7 — Adoções** | O mesmo, em `services/adocoes/src/`. Os dados de animais e adotantes vêm das réplicas (`replica_animais` e `replica_adotantes`), atualizadas pelos eventos do Kafka. Não use `fetch` para os outros serviços. |
 | **8 — Experimentos** | Conectar no **Compass** com o usuário `exp_pessoa8` (veja abaixo). Use preferencialmente uma coleção própria (ex.: `experimentos`) para não bagunçar os dados que os serviços usam. |
 | **9 — Testes** | Rodar o projeto e conferir os dados gravados no **Compass** com `leitura_geral`. |
 | **1 e 2** | Opcional: visualizar os dados no Compass com `leitura_geral`. |
