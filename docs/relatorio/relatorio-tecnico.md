@@ -576,8 +576,6 @@ Em 22/10 também foi encontrado e corrigido um deslocamento horizontal da tela d
 
 ### 11.4 Demonstração da independência dos serviços
 
-**Com o Kafka (a partir de 10/11/2026).** Com o serviço de Animais parado (`docker compose stop animais`), o serviço de Adoções continuou registrando solicitações (`201`), com os dados do animal vindos da réplica (caso CQ02, `evidencias/testes/queda-animais-20261111-003017.md`). Ao religar o serviço de Animais, ele republica todos os animais e as réplicas continuam completas. Pela interface do Kafka (<http://localhost:8080>) é possível acompanhar os eventos chegando a cada cadastro.
-
 **Com HTTP (versão de 22/10/2026, registrada para comparação).** Com o serviço de Animais parado (`docker compose stop animais`), a rota `/health` do serviço de Adoções passou a informar `"animais": "fora do ar"` e `"adotantes": "no ar"` (Figura 19). Ao enviar um formulário pelo site, o questionário foi gravado normalmente pelo serviço de Adotantes, mas o serviço de Adoções respondeu `503` depois do tempo limite de 3 segundos, e o site mostrou a mensagem de serviço indisponível, sem a tela de sucesso (Figura 20). O painel continuou listando as solicitações, porque elas guardam o resumo do animal. Com `docker compose start animais`, o catálogo voltou em cerca de 10 segundos, tempo da reconexão com o Atlas.
 
 ![Figura 19 – Health de Adoções com Animais fora do ar](evidencias/EV15-health-animais-fora-do-ar.jpg)
@@ -587,6 +585,20 @@ Em 22/10 também foi encontrado e corrigido um deslocamento horizontal da tela d
 ![Figura 20 – Site com serviço indisponível](evidencias/EV16-site-servico-indisponivel-503.jpg)
 
 *Figura 20 – Mensagem exibida no site quando o serviço de Adoções responde `503`. Fonte: os autores (2026).*
+
+**Com o Kafka (a partir de 10/11/2026).** Com o serviço de Animais parado (`docker compose stop animais`), o serviço de Adoções continuou registrando solicitações (`201`), com os dados do animal vindos da réplica (caso CQ02, `evidencias/testes/queda-animais-20261111-003017.md`). Ao religar o serviço de Animais, ele republica todos os animais e as réplicas continuam completas. A rota `/health` de Adoções mostra o banco e o Kafka conectados e quantos registros já chegaram às réplicas (Figura 21). Pela interface do Kafka (<http://localhost:8080>) é possível ver os três tópicos (Figura 22) e o conteúdo de cada evento, como o `AnimalSalvo` publicado a cada cadastro (Figura 23).
+
+![Figura 21 – Health de Adoções com o Kafka](evidencias/EV33-health-adocoes-kafka.jpg)
+
+*Figura 21 – Rota `/health` do serviço de Adoções após a migração: banco e Kafka conectados e quantidade de registros em cada réplica. Fonte: os autores (2026).*
+
+![Figura 22 – Tópicos no Kafka UI](evidencias/EV32-kafka-ui-topicos.jpg)
+
+*Figura 22 – Tópicos `animais.eventos`, `adotantes.eventos` e `adocoes.eventos` no Kafka UI. Fonte: os autores (2026).*
+
+![Figura 23 – Evento AnimalSalvo no Kafka UI](evidencias/EV32a-kafka-ui-mensagem.jpg)
+
+*Figura 23 – Conteúdo de um evento `AnimalSalvo` no tópico `animais.eventos`: o serviço de Animais publica o estado atual do animal, e o de Adoções atualiza a réplica a partir dele. Fonte: os autores (2026).*
 
 ## 12. Conclusão
 
@@ -610,9 +622,13 @@ O MongoDB se mostrou adequado aos dados do projeto, em especial às característ
 
 ## 13. Referências
 
+APACHE SOFTWARE FOUNDATION. **Apache Kafka documentation**. Disponível em: <https://kafka.apache.org/documentation/>. Acesso em: 10 nov. 2026.
+
 DOCKER INC. **Docker Compose documentation**. Disponível em: <https://docs.docker.com/compose/>. Acesso em: 22 out. 2026.
 
 FOWLER, M.; LEWIS, J. **Microservices**: a definition of this new architectural term. 2014. Disponível em: <https://martinfowler.com/articles/microservices.html>. Acesso em: 22 out. 2026.
+
+KAFKAJS. **KafkaJS documentation**. Disponível em: <https://kafka.js.org/docs/getting-started>. Acesso em: 10 nov. 2026.
 
 MONGODB INC. **MongoDB Manual**. Disponível em: <https://www.mongodb.com/docs/manual/>. Acesso em: 22 out. 2026.
 
@@ -636,7 +652,7 @@ THE POSTGRESQL GLOBAL DEVELOPMENT GROUP. **PostgreSQL documentation**. Disponív
 |---|---|---|---|
 | Pessoa 1 | Isadora Rocha | Pesquisa, requisitos e organização | Documento de requisitos, escopo, texto da arquitetura |
 | Pessoa 2 | Arthur Rodrigues | Design (UI/UX) | Identidade visual Aumigo, paleta, tipografia e layout das telas |
-| Pessoa 3 | Arthur Oliveira Gomes | Infraestrutura e configuração | Repositório, estrutura inicial dos 3 serviços e do frontend, Docker Compose, MongoDB Atlas e usuários, guias, contrato de API inicial |
+| Pessoa 3 | Arthur Oliveira Gomes | Infraestrutura e configuração | Repositório, estrutura inicial dos 3 serviços e do frontend, Docker Compose, MongoDB Atlas e usuários, guias, contrato de API inicial e migração da comunicação entre os serviços para o Kafka (PR #10) |
 | Pessoa 4 | Marielly Moreira da Silva Oliveira | Frontend | Site público (catálogo, filtros, formulário) e painel administrativo (PRs #3 e #6) |
 | Pessoa 5 | Caio Varandas | Microsserviço de Animais | Rotas de cadastro, listagem com filtros, consulta e disponibilidade (PR #4) |
 | Pessoa 6 | Lucas Moura | Microsserviço de Adotantes | Rotas do questionário, validações, e-mail único e cálculo da idade (PR #2) |
