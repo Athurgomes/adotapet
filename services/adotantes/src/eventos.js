@@ -102,4 +102,9 @@ function kafkaConectado() {
   return conectado;
 }
 
-module.exports = { conectarKafka, kafkaConectado, publicarAdotante, paraEvento };
+// Fecha a conexão com o Kafka ao parar o container (docker compose stop/restart).
+async function desconectarKafka() {
+  await produtor.disconnect().catch(() => {});
+}
+
+module.exports = { conectarKafka, desconectarKafka, kafkaConectado, publicarAdotante, paraEvento };

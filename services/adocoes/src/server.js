@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { conectarBanco, bancoConectado } = require('./db');
-const { conectarKafka, kafkaConectado } = require('./eventos');
+const { conectarKafka, desconectarKafka, kafkaConectado } = require('./eventos');
 const AnimalReplica = require('./models/AnimalReplica');
 const AdotanteReplica = require('./models/AdotanteReplica');
 const adocoesRoutes = require('./routes/adocoes');
@@ -60,3 +60,12 @@ app.listen(PORT, () => {
   conectarBanco(MONGODB_URI, DB_NAME);
   conectarKafka();
 });
+
+// Encerramento limpo: o Docker manda SIGTERM no stop/restart
+for (const sinal of ['SIGTERM', 'SIGINT']) {
+  process.on(sinal, async () => {
+    console.log(`[${SERVICO}] Encerrando (${sinal})...`);
+    await desconectarKafka();
+    process.exit(0);
+  });
+}

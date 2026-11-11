@@ -21,7 +21,8 @@ const kafka = new Kafka({
   // As falhas de conexão já são registradas pelas mensagens "[kafka]" deste arquivo
   logLevel: logLevel.NOTHING,
 });
-const consumidor = kafka.consumer({ groupId: 'adocoes-replicas' });
+// sessionTimeout menor: se o container cair sem avisar o Kafka, o grupo percebe em 10s (padrão: 30s)
+const consumidor = kafka.consumer({ groupId: 'adocoes-replicas', sessionTimeout: 10000, heartbeatInterval: 3000 });
 const produtor = kafka.producer({ createPartitioner: Partitioners.DefaultPartitioner });
 
 const estado = { consumidor: false, produtor: false };
@@ -53,10 +54,18 @@ async function processarMensagem({ topic, message }) {
   await aplicarEvento(evento, modelos);
 }
 
+async function aguardarBanco() {
+  while (!bancoConectado()) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
+
 async function conectarKafka() {
   try {
     await produtor.connect();
     estado.produtor = true;
+    // Só começa a consumir com o banco conectado: sem ele, as réplicas não podem ser gravadas
+    await aguardarBanco();
     await consumidor.connect();
     // fromBeginning: na primeira vez, lê todo o histórico (compactado) e monta as réplicas
     await consumidor.subscribe({ topics: TOPICOS_CONSUMIDOS, fromBeginning: true });
@@ -111,4 +120,10 @@ async function publicarSolicitacao(tipo, solicitacao) {
   }
 }
 
-module.exports = { conectarKafka, kafkaConectado, publicarSolicitacao };
+// Ao parar o container (docker compose stop/restart), sai do grupo de consumidores na hora.
+// Sem isso, o novo container espera o Kafka perceber a saída antes de voltar a consumir.
+async function desconectarKafka() {
+  await Promise.allSettled([consumidor.disconnect(), produtor.disconnect()]);
+}
+
+module.exports = { conectarKafka, desconectarKafka, kafkaConectado, publicarSolicitacao };
