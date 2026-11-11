@@ -43,9 +43,9 @@
 
 `GET /health` → `200`
 ```json
-{ "servico": "animais", "status": "ok", "banco": "conectado" }
+{ "servico": "animais", "status": "ok", "banco": "conectado", "kafka": "conectado" }
 ```
-O serviço de Adoções também retorna `"dependencias": { "animais": "no ar", "adotantes": "no ar" }`.
+O serviço de Adoções também retorna quantos registros já chegaram às réplicas: `"replicas": { "animais": 12, "adotantes": 5 }`. Ele **não consulta** os outros serviços.
 
 ---
 
@@ -318,22 +318,79 @@ Os campos `resumoAnimal` e `resumoAdotante` são uma **cópia dos dados no momen
 
 ```
 1. Validar se animalId e adotanteId foram enviados               -> 400
-2. GET {ANIMAIS_API_URL}/animais/:animalId
-     - serviço fora do ar                                       -> 503
-     - 404                                                      -> 404 "Animal não encontrado"
-     - disponivel == false                                      -> 409 "Animal indisponível para adoção"
-3. GET {ADOTANTES_API_URL}/adotantes/:adotanteId
-     - serviço fora do ar                                       -> 503
-     - 404                                                      -> 404 "Adotante não encontrado"
-     - idade < 21                                               -> 422 "Idade mínima para adoção é 21 anos"
+2. Buscar o animal na réplica local (replica_animais, em adocoes_db)
+     - não está na réplica                                      -> 404 "Animal não encontrado."
+     - dados incompletos                                        -> 503
+     - disponivel == false                                      -> 409 "Animal indisponível para adoção."
+3. Buscar o adotante na réplica local (replica_adotantes)
+     - não está na réplica                                      -> 404 "Adotante não encontrado."
+     - dados incompletos                                        -> 503
+     - idade < 21 (calculada a partir de dataNascimento)        -> 422 "Idade mínima para adoção é 21 anos."
 4. Verificar em adocoes_db se já existe solicitação "Pendente"
-   com o mesmo animalId e adotanteId                            -> 409 "Já existe uma solicitação pendente deste adotante para este animal"
+   com o mesmo animalId e adotanteId                            -> 409 "Já existe uma solicitação pendente deste adotante para este animal."
 5. Salvar a solicitação com status "Pendente" e os resumos      -> 201
+6. Publicar SolicitacaoCriada em adocoes.eventos
 ```
+
+As réplicas são mantidas pelos eventos do Kafka (seção 4). Nenhuma etapa chama as APIs de Animais ou Adotantes.
 
 ### Regras definidas
 
 - **Sem solicitação duplicada:** o mesmo adotante não pode ter duas solicitações `"Pendente"` para o mesmo animal. A segunda tentativa retorna **409** (passo 4 do fluxo).
-- **Ids em formato inválido:** `animalId` ou `adotanteId` que não são ObjectId (24 caracteres hexadecimais) → **400**, antes de chamar os outros serviços (E02).
-- **Resposta inesperada dos outros serviços:** se Animais ou Adotantes responderem algo diferente de `200`/`404` (ex.: `503` porque o banco deles caiu), Adoções responde **503**.
+- **Ids em formato inválido:** `animalId` ou `adotanteId` que não são ObjectId (24 caracteres hexadecimais) → **400**, antes de consultar as réplicas (E02).
+- **Serviço vizinho fora do ar:** como a validação usa as réplicas, Adoções continua registrando solicitações com Animais ou Adotantes parados. O **503** só acontece se a réplica tiver dados incompletos.
+- **Consistência eventual:** um animal ou adotante recém-cadastrado leva alguns milissegundos para chegar à réplica. Nesse intervalo, a solicitação responde **404**.
 - **A solicitação não altera o animal:** registrar uma solicitação **não** muda `disponivel` para `false`. Nesta versão não existe aprovação (RF12), então o animal continua disponível e pode receber solicitações de outros adotantes. A disponibilidade só muda pela rota `PATCH /animais/:id/disponibilidade`.
+
+---
+
+## 4. Eventos (Kafka)
+
+Os microsserviços não chamam as APIs uns dos outros. A troca de dados entre eles acontece por eventos publicados no Kafka (`KAFKA_BROKERS=kafka:9092`).
+
+| Tópico | Quem publica | Quem consome | Chave | Limpeza |
+|---|---|---|---|---|
+| `animais.eventos` | Animais | Adoções | id do animal | `compact` (guarda o último estado de cada animal) |
+| `adotantes.eventos` | Adotantes | Adoções | id do adotante | `compact` |
+| `adocoes.eventos` | Adoções | (nenhum por enquanto) | id da solicitação | por tempo (padrão do Kafka) |
+
+### Envelope (todos os eventos)
+
+```json
+{
+  "tipo": "AnimalSalvo",
+  "versao": 1,
+  "ocorridoEm": "2026-11-10T14:30:00.000Z",
+  "dados": { "id": "6710f1c2a1b2c3d4e5f60001", "...": "..." }
+}
+```
+
+Cada evento leva o **estado completo** do registro (e não só o que mudou). Quem consome grava o último estado recebido e ignora eventos com `atualizadoEm` mais antigo do que o já salvo; por isso receber o mesmo evento duas vezes não causa problema.
+
+### `AnimalSalvo` (`animais.eventos`)
+
+Publicado em `POST /animais`, `PUT /animais/:id`, `PATCH /animais/:id/disponibilidade` e, para todos os animais, sempre que o serviço inicia.
+
+```json
+{ "id": "6710f1c2a1b2c3d4e5f60001", "nome": "Thor", "especie": "cachorro", "porte": "medio",
+  "cidade": "Goiânia", "uf": "GO", "imagemUrl": "https://...", "disponivel": true,
+  "atualizadoEm": "2026-11-10T14:30:00.000Z" }
+```
+
+### `AdotanteSalvo` (`adotantes.eventos`)
+
+Publicado em `POST /adotantes` e, para todos os adotantes, sempre que o serviço inicia. Questionário, endereço, telefone e profissão **não** saem do serviço de Adotantes (RNF10).
+
+```json
+{ "id": "6710f1c2a1b2c3d4e5f60101", "nomeCompleto": "Maria Souza", "dataNascimento": "1995-06-20",
+  "cidade": "Goiânia", "uf": "GO", "email": "maria@exemplo.com", "atualizadoEm": "2026-11-10T14:30:00.000Z" }
+```
+
+### `SolicitacaoCriada` e `StatusAlterado` (`adocoes.eventos`)
+
+Publicados em `POST /adocoes` e `PATCH /adocoes/:id/status`. Permitem que outros serviços reajam no futuro (ex.: marcar o animal como indisponível quando a adoção for concluída) sem chamar a API de Adoções.
+
+```json
+{ "id": "6711a0b2c3d4e5f6a7b80001", "animalId": "6710f1c2a1b2c3d4e5f60001",
+  "adotanteId": "6710f1c2a1b2c3d4e5f60101", "status": "Pendente", "atualizadoEm": "2026-11-10T14:31:00.000Z" }
+```

@@ -17,7 +17,7 @@
 | EV01 | Containers rodando | `docker compose ps` no terminal | 5 | CM01 | [ ] |
 | EV02 | Página de status com os 3 serviços "no ar" e "conectado" | <http://localhost:5500> (antes do frontend final) | 5 | CM02 | [ ] |
 | EV03 | Os 3 bancos no Atlas/Compass | Compass com `leitura_geral`, menu lateral | 5, 7 | CM03 | [ ] |
-| EV04 | Resultado do script de testes com tudo PASSOU | `docker compose run --rm testes` no terminal | 11 | CT01–CT52 | [ ] |
+| EV04 | Resultado do script de testes com tudo PASSOU | `docker compose run --rm testes` no terminal | 11 | CT01–CT54 | [x] `testes/integracao-20261111-003011.md` (44 de 44, com Kafka) |
 | EV05 | Catálogo de animais | Página inicial do site | 9 | CF01 | [x] `EV05-catalogo.jpg` e `EV05a-pagina-inicial.jpg` |
 | EV06 | Filtro por espécie | Catálogo filtrado | 9 | CF02 | [x] `EV06-filtro-especie.jpg` |
 | EV07 | Cadastro de animal com mensagem de sucesso | Formulário de animais | 9 | CF03 | [ ] |
@@ -45,3 +45,14 @@
 | EV29 | Animal marcado como indisponível sumindo do catálogo | Painel + página inicial | 9 | CF07 | [x] `EV29-painel-animal-indisponivel.jpg` |
 
 > Prints de **erros** (para o registro de erros, não para o relatório final) ficam em `erros/`. Prints de **funcionamento** ficam na raiz desta pasta.
+
+## Evidências após a migração para o Kafka (10/11/2026)
+
+| ID | Evidência | Como obter | Seção do relatório | Caso | Feito |
+|---|---|---|---|---|---|
+| EV30 | Fluxo completo com Kafka: 44 de 44 | `docker compose run --rm testes` | 11.2 | CT01–CT54 | [x] `testes/integracao-20261111-003011.md` |
+| EV31 | Animais parado e a solicitação registrada (`201`) | `docker compose stop animais` + `docker compose run --rm testes --queda` | 11.4 | CQ01–CQ03 | [x] `testes/queda-animais-20261111-003017.md` |
+| EV32 | Mensagens nos tópicos do Kafka | Kafka UI em <http://localhost:8080> após cadastrar um animal | 4.2 | CM08 | [ ] |
+| EV33 | `/health` de Adoções com `kafka` e `replicas` | <http://localhost:3003/health> | 8.3 | CT02 | [ ] |
+
+> EV15 e EV16 mostram o comportamento da versão com HTTP (22/10): `/health` com `dependencias` e mensagem `503` no site. Com o Kafka, a solicitação é registrada mesmo com Animais fora do ar.

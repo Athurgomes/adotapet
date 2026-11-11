@@ -1,37 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 432" width="760" height="432" font-family="Segoe UI, Arial, sans-serif" font-size="13" role="img" aria-label="Arquitetura do Aumigo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520" font-family="Segoe UI, Arial, sans-serif" font-size="13" role="img" aria-label="Arquitetura do Aumigo">
   <title>Figura 1 – Arquitetura do Aumigo</title>
   <defs>
     <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0 0L10 5L0 10z" fill="#8a8a80"/>
     </marker>
+    <marker id="seta-kafka" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#c2611f"/>
+    </marker>
   </defs>
-  <rect width="760" height="432" fill="#ffffff"/>
+  <rect width="760" height="520" fill="#ffffff"/>
 
-  <text x="24" y="30" font-size="15" font-weight="600" fill="#1f1f1f">O navegador fala com os três serviços; só o Adoções fala com os outros dois</text>
-  <text x="24" y="50" font-size="11.5" fill="#5f5f5f">Cada componente roda em um container Docker; os bancos ficam no MongoDB Atlas</text>
+  <text x="24" y="30" font-size="15" font-weight="600" fill="#1f1f1f">O navegador fala com os três serviços por HTTP; entre os serviços, só eventos no Kafka</text>
+  <text x="24" y="50" font-size="11.5" fill="#5f5f5f">Cada componente roda em um container Docker; cada serviço acessa só o próprio banco no MongoDB Atlas</text>
 
-  <!-- conexões -->
+  <!-- conexões HTTP (navegador) e com os bancos -->
   <g fill="none" stroke="#8a8a80" stroke-width="1.25">
     <path d="M204 100H290" marker-end="url(#seta)"/>
     <path d="M380 128V200" marker-end="url(#seta)"/>
     <path d="M340 128V164H114V200" marker-end="url(#seta)"/>
     <path d="M420 128V164H646V200" marker-end="url(#seta)"/>
-    <path d="M290 236H204" marker-end="url(#seta)"/>
-    <path d="M470 236H556" marker-end="url(#seta)"/>
-    <path d="M114 272V328" marker-end="url(#seta)"/>
-    <path d="M380 272V328" marker-end="url(#seta)"/>
-    <path d="M646 272V328" marker-end="url(#seta)"/>
+    <path d="M114 272V304" marker-end="url(#seta)"/>
+    <path d="M380 272V304" marker-end="url(#seta)"/>
+    <path d="M646 272V304" marker-end="url(#seta)"/>
   </g>
+
+  <!-- eventos no Kafka -->
+  <g fill="none" stroke="#c2611f" stroke-width="1.5">
+    <path d="M196 272V400" marker-end="url(#seta-kafka)"/>
+    <path d="M564 272V400" marker-end="url(#seta-kafka)"/>
+    <path d="M298 400V272" marker-end="url(#seta-kafka)"/>
+    <path d="M462 272V400" marker-end="url(#seta-kafka)"/>
+  </g>
+
   <g font-size="11.5" fill="#5f5f5f">
     <text x="247" y="92" text-anchor="middle">páginas</text>
     <text x="124" y="156">chamadas HTTP (JSON)</text>
-    <text x="247" y="228" text-anchor="middle">HTTP</text>
-    <text x="247" y="254" text-anchor="middle">disponível?</text>
-    <text x="513" y="228" text-anchor="middle">HTTP</text>
-    <text x="513" y="254" text-anchor="middle">idade ≥ 21?</text>
-    <text x="122" y="300">svc_animais</text>
-    <text x="388" y="300">svc_adocoes</text>
-    <text x="654" y="300">svc_adotantes</text>
+  </g>
+  <g font-size="11" fill="#c2611f">
+    <text x="190" y="376" text-anchor="end">publica</text>
+    <text x="190" y="390" text-anchor="end">AnimalSalvo</text>
+    <text x="292" y="383" text-anchor="end">consome</text>
+    <text x="468" y="383">publica</text>
+    <text x="570" y="376">publica</text>
+    <text x="570" y="390">AdotanteSalvo</text>
   </g>
 
   <!-- linha de cima -->
@@ -44,29 +55,37 @@
   <text x="380" y="112" text-anchor="middle" font-size="11.5" fill="#5f5f5f">site e painel /admin</text>
 
   <!-- microsserviços -->
-  <rect x="24" y="200" width="180" height="72" rx="8" fill="none" stroke="#8a8a80" stroke-width="1.25"/>
+  <rect x="24" y="200" width="180" height="72" rx="8" fill="#ffffff" stroke="#8a8a80" stroke-width="1.25"/>
   <text x="114" y="224" text-anchor="middle" font-weight="600" fill="#1f1f1f">Animais :3001</text>
   <text x="114" y="242" text-anchor="middle" font-size="11.5" fill="#5f5f5f">Catálogo e filtros</text>
   <text x="114" y="258" text-anchor="middle" font-size="11.5" fill="#5f5f5f">edição, disponibilidade</text>
 
-  <rect x="290" y="200" width="180" height="72" rx="8" fill="#2f6fd6" fill-opacity="0.12" stroke="#2f6fd6" stroke-width="2"/>
+  <rect x="290" y="200" width="180" height="72" rx="8" fill="#eaf1fc" stroke="#2f6fd6" stroke-width="2"/>
   <text x="380" y="224" text-anchor="middle" font-weight="600" fill="#1f1f1f">Adoções :3003</text>
   <text x="380" y="242" text-anchor="middle" font-size="11.5" fill="#1f1f1f">Solicitações e status</text>
-  <text x="380" y="258" text-anchor="middle" font-size="11.5" fill="#1f1f1f">valida animal e idade</text>
+  <text x="380" y="258" text-anchor="middle" font-size="11.5" fill="#1f1f1f">valida pelas réplicas</text>
 
-  <rect x="556" y="200" width="180" height="72" rx="8" fill="none" stroke="#8a8a80" stroke-width="1.25"/>
+  <rect x="556" y="200" width="180" height="72" rx="8" fill="#ffffff" stroke="#8a8a80" stroke-width="1.25"/>
   <text x="646" y="224" text-anchor="middle" font-weight="600" fill="#1f1f1f">Adotantes :3002</text>
   <text x="646" y="242" text-anchor="middle" font-size="11.5" fill="#5f5f5f">Questionário do</text>
   <text x="646" y="258" text-anchor="middle" font-size="11.5" fill="#5f5f5f">interessado e idade</text>
 
-  <!-- MongoDB Atlas -->
-  <rect x="24" y="312" width="712" height="96" rx="8" fill="none" stroke="#8a8a80" stroke-width="1.25" stroke-dasharray="4 4"/>
-  <rect x="40" y="328" width="148" height="40" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
-  <text x="114" y="352" text-anchor="middle" fill="#1f1f1f">animais_db</text>
-  <rect x="306" y="328" width="148" height="40" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
-  <text x="380" y="352" text-anchor="middle" fill="#1f1f1f">adocoes_db</text>
-  <rect x="572" y="328" width="148" height="40" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
-  <text x="646" y="352" text-anchor="middle" fill="#1f1f1f">adotantes_db</text>
-  <text x="40" y="392" font-weight="600" fill="#1f1f1f">MongoDB Atlas · cluster adotapet</text>
-  <text x="720" y="392" text-anchor="end" font-size="11.5" fill="#5f5f5f">cada usuário acessa só o próprio banco</text>
+  <!-- bancos (MongoDB Atlas) -->
+  <rect x="40" y="304" width="148" height="44" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
+  <text x="114" y="323" text-anchor="middle" fill="#1f1f1f">animais_db</text>
+  <text x="114" y="339" text-anchor="middle" font-size="10.5" fill="#5f5f5f">svc_animais</text>
+  <rect x="306" y="304" width="148" height="44" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
+  <text x="380" y="323" text-anchor="middle" fill="#1f1f1f">adocoes_db</text>
+  <text x="380" y="339" text-anchor="middle" font-size="10.5" fill="#5f5f5f">solicitações + réplicas</text>
+  <rect x="572" y="304" width="148" height="44" rx="8" fill="#f0f0ec" stroke="#8a8a80" stroke-width="1.25"/>
+  <text x="646" y="323" text-anchor="middle" fill="#1f1f1f">adotantes_db</text>
+  <text x="646" y="339" text-anchor="middle" font-size="10.5" fill="#5f5f5f">svc_adotantes</text>
+
+  <!-- Kafka -->
+  <rect x="24" y="400" width="712" height="64" rx="8" fill="#fdf1e7" stroke="#c2611f" stroke-width="1.5"/>
+  <text x="380" y="425" text-anchor="middle" font-weight="600" fill="#1f1f1f">Apache Kafka (KRaft, 1 nó)</text>
+  <text x="380" y="445" text-anchor="middle" font-size="11.5" fill="#5f5f5f">animais.eventos (compactado) · adotantes.eventos (compactado) · adocoes.eventos</text>
+
+  <text x="24" y="496" font-weight="600" fill="#1f1f1f">Bancos: MongoDB Atlas · cluster adotapet</text>
+  <text x="736" y="496" text-anchor="end" font-size="11.5" fill="#5f5f5f">nenhum serviço chama a API de outro serviço</text>
 </svg>

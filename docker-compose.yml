@@ -1,10 +1,74 @@
-# Aumigo: frontend + 3 microsserviços, agrupados no projeto "projeto-adotapet".
+# Aumigo: frontend + 3 microsserviços + Kafka, agrupados no projeto "projeto-adotapet".
 # Para subir tudo:  docker compose up --build
+# Com a interface do Kafka (http://localhost:8080):  docker compose --profile kafka-ui up --build
 # As connection strings do MongoDB Atlas ficam no arquivo .env (veja .env.example).
+#
+# Os microsserviços NÃO chamam as APIs uns dos outros: eles trocam eventos pelo Kafka.
+# Animais e Adotantes publicam o que mudou; Adoções consome e mantém uma cópia local
+# (réplica) com os dados de que precisa para validar as solicitações.
 
 name: projeto-adotapet
 
 services:
+  # Broker Kafka em modo KRaft (sem Zookeeper), com um único nó: suficiente para o projeto.
+  kafka:
+    image: apache/kafka:4.1.0
+    environment:
+      # Identificador fixo do cluster (formato exigido pelo Kafka: UUID em base64)
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Os tópicos são criados explicitamente pelo serviço kafka-topicos
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  # Cria os tópicos uma vez e encerra. "compact" guarda sempre o último estado de cada
+  # registro (chave = id), o que permite reconstruir as réplicas a qualquer momento.
+  kafka-topicos:
+    image: apache/kafka:4.1.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        set -e
+        criar() { /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --partitions 1 --replication-factor 1 --topic "$$@"; }
+        criar animais.eventos --config cleanup.policy=compact
+        criar adotantes.eventos --config cleanup.policy=compact
+        criar adocoes.eventos
+        echo "Tópicos prontos."
+    restart: "no"
+
+  # Interface web para ver tópicos e mensagens (opcional, bom para a apresentação).
+  # Sobe só com:  docker compose --profile kafka-ui up
+  kafka-ui:
+    image: kafbat/kafka-ui:latest
+    profiles: [ "kafka-ui" ]
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: aumigo
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   frontend:
     build: ./frontend
     ports:
@@ -28,10 +92,14 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: animais_db
       MONGODB_URI: ${ANIMAIS_MONGODB_URI:?Defina ANIMAIS_MONGODB_URI no arquivo .env}
+      KAFKA_BROKERS: kafka:9092
     volumes:
       # Reinicia o serviço automaticamente ao salvar um arquivo em src/
       - ./services/animais/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
+    depends_on:
+      kafka-topicos:
+        condition: service_completed_successfully
     healthcheck: &healthcheck
       test: [ "CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1" ]
       interval: 15s
@@ -49,9 +117,13 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: adotantes_db
       MONGODB_URI: ${ADOTANTES_MONGODB_URI:?Defina ADOTANTES_MONGODB_URI no arquivo .env}
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - ./services/adotantes/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
+    depends_on:
+      kafka-topicos:
+        condition: service_completed_successfully
     healthcheck: *healthcheck
     restart: unless-stopped
 
@@ -65,16 +137,15 @@ services:
       TZ: America/Sao_Paulo
       DB_NAME: adocoes_db
       MONGODB_URI: ${ADOCOES_MONGODB_URI:?Defina ADOCOES_MONGODB_URI no arquivo .env}
-      # Dentro da rede do Docker, cada serviço é encontrado pelo próprio nome
-      ANIMAIS_API_URL: http://animais:3001
-      ADOTANTES_API_URL: http://adotantes:3002
+      # Adoções não chama as APIs de Animais e Adotantes: recebe os dados pelo Kafka
+      KAFKA_BROKERS: kafka:9092
     volumes:
       - ./services/adocoes/src:/app/src
     command: [ "node", "--watch", "src/server.js" ]
     healthcheck: *healthcheck
     depends_on:
-      - animais
-      - adotantes
+      kafka-topicos:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Testes de integração (Pessoa 9). Não sobe com o "up". Com o projeto rodando:

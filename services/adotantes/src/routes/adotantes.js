@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Adotante = require('../models/Adotante');
+const { publicarAdotante } = require('../eventos');
 
 const router = express.Router();
 
@@ -131,6 +132,7 @@ router.post('/', async (req, res, next) => {
 
   try {
     const adotante = await Adotante.create(req.body);
+    await publicarAdotante(adotante);
     return res.status(201).json(adotante);
   } catch (erro) {
     // O índice único do MongoDB/Mongoose gera o código 11000 para e-mail repetido.

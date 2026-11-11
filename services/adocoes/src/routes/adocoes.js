@@ -1,41 +1,24 @@
 const express = require('express');
 const Solicitacao = require('../models/Solicitacao');
+const AnimalReplica = require('../models/AnimalReplica');
+const AdotanteReplica = require('../models/AdotanteReplica');
+const { avaliarSolicitacao } = require('../validacao');
+const { publicarSolicitacao } = require('../eventos');
 
 const router = express.Router();
 const ID_VALIDO = /^[a-f\d]{24}$/i;
 const STATUS_PENDENTE = 'Pendente';
-const ANIMAIS_API_URL = process.env.ANIMAIS_API_URL || 'http://localhost:3001';
-const ADOTANTES_API_URL = process.env.ADOTANTES_API_URL || 'http://localhost:3002';
 
 // Rotas do microsserviço de Adoções (responsável: Pessoa 7).
 // Contrato completo em docs/contrato-api.md.
-// Cada rota responde 501 até ser implementada.
 //
-// As URLs dos outros serviços vêm das variáveis de ambiente:
-//   process.env.ANIMAIS_API_URL   -> ex.: http://animais:3001
-//   process.env.ADOTANTES_API_URL -> ex.: http://adotantes:3002
-// Use fetch (já disponível no Node) para consultá-los. Nunca acesse
-// animais_db ou adotantes_db diretamente (RNF06).
+// Este serviço NÃO chama as APIs de Animais e Adotantes. Os dados de que ele
+// precisa chegam pelo Kafka e ficam nas réplicas locais (models/*Replica.js),
+// no próprio adocoes_db. Assim, uma solicitação pode ser registrada mesmo com
+// Animais ou Adotantes fora do ar (RNF06: cada serviço só acessa o próprio banco).
 
 function responderErro(res, status, erro, detalhes) {
   return res.status(status).json(detalhes ? { erro, detalhes } : { erro });
-}
-
-async function consultarServico(url, servico, mensagemNaoEncontrado) {
-  try {
-    const resposta = await fetch(url, { signal: AbortSignal.timeout(3000) });
-
-    if (resposta.status === 404) {
-      return { erro: 404, mensagem: mensagemNaoEncontrado };
-    }
-    if (!resposta.ok) {
-      return { erro: 503, mensagem: `Serviço de ${servico} indisponível.` };
-    }
-
-    return { dados: await resposta.json() };
-  } catch {
-    return { erro: 503, mensagem: `Serviço de ${servico} indisponível.` };
-  }
 }
 
 // RF10 / RF11 / RF12 - Registrar solicitação de adoção (status "Pendente")
@@ -54,49 +37,14 @@ router.post('/', async (req, res, next) => {
   }
 
   try {
-    const consultaAnimal = await consultarServico(
-      `${ANIMAIS_API_URL}/animais/${animalId}`,
-      'animais',
-      'Animal não encontrado.'
-    );
-    if (consultaAnimal.erro) {
-      return responderErro(res, consultaAnimal.erro, consultaAnimal.mensagem);
-    }
+    const [animal, adotante] = await Promise.all([
+      AnimalReplica.findById(animalId.toLowerCase()).lean(),
+      AdotanteReplica.findById(adotanteId.toLowerCase()).lean(),
+    ]);
 
-    const animal = consultaAnimal.dados;
-    const camposAnimal = ['nome', 'especie', 'porte', 'cidade', 'uf', 'imagemUrl'];
-    if (
-      !animal ||
-      typeof animal.disponivel !== 'boolean' ||
-      camposAnimal.some((campo) => typeof animal[campo] !== 'string')
-    ) {
-      return responderErro(res, 503, 'Resposta inválida do serviço de animais.');
-    }
-    if (!animal.disponivel) {
-      return responderErro(res, 409, 'Animal indisponível para adoção.');
-    }
-
-    const consultaAdotante = await consultarServico(
-      `${ADOTANTES_API_URL}/adotantes/${adotanteId}`,
-      'adotantes',
-      'Adotante não encontrado.'
-    );
-    if (consultaAdotante.erro) {
-      return responderErro(res, consultaAdotante.erro, consultaAdotante.mensagem);
-    }
-
-    const adotante = consultaAdotante.dados;
-    const camposAdotante = ['nomeCompleto', 'cidade', 'uf', 'email'];
-    if (
-      !adotante ||
-      !Number.isInteger(adotante.idade) ||
-      adotante.idade < 0 ||
-      camposAdotante.some((campo) => typeof adotante[campo] !== 'string')
-    ) {
-      return responderErro(res, 503, 'Resposta inválida do serviço de adotantes.');
-    }
-    if (adotante.idade < 21) {
-      return responderErro(res, 422, 'Idade mínima para adoção é 21 anos.');
+    const avaliacao = avaliarSolicitacao(animal, adotante);
+    if (avaliacao.erro) {
+      return responderErro(res, avaliacao.erro, avaliacao.mensagem);
     }
 
     const duplicada = await Solicitacao.exists({
@@ -116,23 +64,11 @@ router.post('/', async (req, res, next) => {
       animalId,
       adotanteId,
       status: STATUS_PENDENTE,
-      resumoAnimal: {
-        nome: animal.nome,
-        especie: animal.especie,
-        porte: animal.porte,
-        cidade: animal.cidade,
-        uf: animal.uf,
-        imagemUrl: animal.imagemUrl,
-      },
-      resumoAdotante: {
-        nomeCompleto: adotante.nomeCompleto,
-        idade: adotante.idade,
-        cidade: adotante.cidade,
-        uf: adotante.uf,
-        email: adotante.email,
-      },
+      resumoAnimal: avaliacao.resumoAnimal,
+      resumoAdotante: avaliacao.resumoAdotante,
     });
 
+    await publicarSolicitacao('SolicitacaoCriada', solicitacao);
     return res.status(201).json(solicitacao);
   } catch (erro) {
     if (erro.code === 11000) {
@@ -199,6 +135,7 @@ router.patch('/:id/status', async (req, res, next) => {
     if (!solicitacao) {
       return responderErro(res, 404, 'Solicitação não encontrada.');
     }
+    await publicarSolicitacao('StatusAlterado', solicitacao);
     return res.json(solicitacao);
   } catch (erro) {
     return next(erro);
