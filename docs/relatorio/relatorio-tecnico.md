@@ -68,7 +68,7 @@ Os requisitos funcionais definem as funcionalidades que o Aumigo deverá oferece
 | RF07 | Idade mínima | O sistema deverá permitir solicitações de adoção apenas de pessoas com idade igual ou superior a 21 anos, conforme regra definida para o projeto. |
 | RF08 | Solicitação de adoção | O sistema deverá permitir o envio de solicitações de adoção a partir do questionário preenchido pelo interessado, associando suas informações ao animal escolhido. |
 | RF09 | Registro da solicitação | O sistema deverá registrar os dados das solicitações de adoção recebidas para armazenamento e consulta pelos serviços responsáveis. |
-| RF10 | Validação da solicitação | O microsserviço de Adoções deverá consultar os serviços de Animais e Adotantes via API REST para verificar os dados necessários, a idade mínima e a disponibilidade do animal. |
+| RF10 | Validação da solicitação | O microsserviço de Adoções deverá verificar os dados necessários, a idade mínima e a disponibilidade do animal com base nas informações publicadas pelos serviços de Animais e Adotantes. *(Revisado em 10/11/2026: antes, a consulta era feita via API REST; ver seção 4.2.)* |
 | RF11 | Interface de login administrativo | O sistema deverá disponibilizar uma tela de login administrativo com campos para e-mail e senha. |
 | RF12 | Edição de animais | O sistema deverá permitir a edição das informações dos animais já cadastrados por meio da área administrativa. |
 | RF13 | Consulta de solicitações | O sistema deverá permitir consultar, no painel administrativo, uma lista geral das solicitações de adoção registradas, contendo informações dos interessados e dos animais solicitados. |
@@ -82,7 +82,7 @@ Os requisitos funcionais definem as funcionalidades que o Aumigo deverá oferece
 | RNF01 | Aplicação web | O sistema deverá funcionar por meio de um navegador, utilizando HTML, CSS e JavaScript no frontend. |
 | RNF02 | Arquitetura de microsserviços | O backend deverá ser dividido em três microsserviços independentes: Animais, Adotantes e Adoções. |
 | RNF03 | Tecnologias do backend | Os microsserviços deverão ser desenvolvidos utilizando Node.js e Express. |
-| RNF04 | Comunicação entre serviços | Os microsserviços deverão se comunicar por meio de APIs REST, utilizando requisições HTTP. |
+| RNF04 | Comunicação entre serviços | Os microsserviços deverão se comunicar por meio de eventos publicados no Apache Kafka. O frontend acessa os serviços por APIs REST (HTTP). *(Revisado em 10/11/2026, por sugestão do professor: antes, a comunicação entre os serviços era por APIs REST; ver seção 4.2.)* |
 | RNF05 | Banco de dados | O sistema deverá utilizar MongoDB, com um banco lógico separado para cada microsserviço. |
 | RNF06 | Independência dos serviços | Cada microsserviço deverá gerenciar seus próprios dados, sem acessar diretamente o banco de dados dos outros serviços. |
 | RNF07 | Interface | O site deverá apresentar uma interface simples, organizada e responsiva. |
@@ -105,7 +105,7 @@ O sistema permitirá o envio de solicitações de adoção a partir do question�
 
 Como apoio à organização da equipe, o painel permite marcar o andamento de cada solicitação como "Pendente", "Em contato" ou "Concluído". Essa marcação é apenas informativa: não aprova nem recusa a solicitação e não altera a disponibilidade do animal, que continua sendo controlada pelo administrador (RF05).
 
-O desenvolvimento utilizará MongoDB e uma arquitetura composta por três microsserviços: Animais, Adotantes e Adoções. Cada serviço será responsável por seus próprios dados, e a comunicação entre eles ocorrerá por meio de APIs REST.
+O desenvolvimento utilizará MongoDB e uma arquitetura composta por três microsserviços: Animais, Adotantes e Adoções. Cada serviço será responsável por seus próprios dados, e a comunicação entre eles ocorrerá por meio de eventos no Apache Kafka. O site e o painel acessam os serviços por APIs REST.
 
 Nesta versão, não serão implementados recursos como pagamentos, chat entre usuários, verificação de documentos de identidade ou análise automática de candidatos por inteligência artificial. Essas funcionalidades, assim como a avaliação das solicitações de adoção, poderão ser consideradas em versões futuras.
 
@@ -119,17 +119,17 @@ Os microsserviços são desenvolvidos utilizando Node.js e Express, com MongoDB 
 
 - **Microsserviço de Animais** (porta 3001, `animais_db`): cadastro, edição, listagem, consulta, filtragem por espécie, sexo, porte e região e atualização da disponibilidade dos animais. Quando um animal é marcado como indisponível, ele deixa de aparecer na página inicial.
 - **Microsserviço de Adotantes** (porta 3002, `adotantes_db`): recebimento e armazenamento das informações fornecidas pelos interessados por meio do questionário de adoção, incluindo dados pessoais e respostas sobre suas condições para cuidar de um animal.
-- **Microsserviço de Adoções** (porta 3003, `adocoes_db`): registro e consulta das solicitações de adoção, associando o animal escolhido às informações fornecidas pelo interessado. Antes de registrar uma solicitação, consulta os microsserviços de Animais e Adotantes, por meio de APIs REST, para verificar os dados necessários, a idade mínima estabelecida e a disponibilidade do animal. As solicitações podem ser apresentadas em uma lista geral no painel administrativo.
+- **Microsserviço de Adoções** (porta 3003, `adocoes_db`): registro e consulta das solicitações de adoção, associando o animal escolhido às informações fornecidas pelo interessado. Antes de registrar uma solicitação, verifica os dados necessários, a idade mínima estabelecida e a disponibilidade do animal em uma cópia local (réplica) dos dados de Animais e Adotantes, mantida pelos eventos do Kafka. As solicitações podem ser apresentadas em uma lista geral no painel administrativo.
 
 O sistema também conta com uma **área administrativa**, composta por uma interface de login e funcionalidades de cadastro, edição e atualização da disponibilidade dos animais, além da consulta geral das solicitações de adoção registradas. Essa área faz parte do frontend e usa as APIs dos três microsserviços, sem a necessidade de criar um microsserviço adicional.
 
-A comunicação entre os microsserviços ocorre por meio de APIs REST, utilizando requisições HTTP. Dessa forma, o microsserviço de Adoções obtém as informações necessárias dos outros serviços sem acessar diretamente seus bancos de dados. A Figura 1 resume os componentes e as chamadas entre eles.
+A comunicação entre os microsserviços ocorre por meio de **eventos publicados no Apache Kafka**. Nenhum serviço chama a API de outro: os serviços de Animais e Adotantes publicam o que mudou, e o de Adoções consome esses eventos e guarda no próprio banco as informações de que precisa, sem acessar os bancos dos outros serviços. A Figura 1 resume os componentes e a comunicação entre eles.
 
 ![Figura 1 – Arquitetura do Aumigo](figuras/figura-01-arquitetura.svg)
 
-*Figura 1 – Arquitetura do Aumigo: frontend, três microsserviços e um banco lógico por serviço no MongoDB Atlas. Fonte: os autores (2026).*
+*Figura 1 – Arquitetura do Aumigo: frontend, três microsserviços, um banco lógico por serviço no MongoDB Atlas e o Kafka para a comunicação entre os serviços. Fonte: os autores (2026).*
 
-O navegador recebe as páginas do container do frontend e, a partir delas, chama diretamente as APIs dos três serviços. Apenas o serviço de Adoções conversa com os outros dois, sempre por HTTP.
+O navegador recebe as páginas do container do frontend e, a partir delas, chama diretamente as APIs dos três serviços por HTTP. Entre os serviços, a troca de dados acontece apenas por eventos no Kafka.
 
 ### 4.1 Decisões de arquitetura
 
@@ -138,12 +138,35 @@ O navegador recebe as páginas do container do frontend e, a partir delas, chama
 | Decisão | Justificativa | Requisitos |
 |---|---|---|
 | Um usuário do Atlas por serviço (`svc_animais`, `svc_adotantes`, `svc_adocoes`), cada um com acesso apenas ao próprio banco | Garante na prática que nenhum serviço lê o banco de outro: uma tentativa seria bloqueada pelo próprio Atlas | RNF05, RNF06 |
-| Comunicação síncrona por HTTP/REST entre Adoções e os outros dois serviços, com tempo limite de 3 segundos | A validação da solicitação precisa da resposta na hora. Se um serviço não responder a tempo, Adoções devolve `503` em vez de ficar esperando | RF10, RNF04 |
+| Comunicação assíncrona por eventos no Kafka entre os serviços (revisão de 10/11/2026; antes era HTTP síncrono com tempo limite de 3 segundos) | Adoções não depende de Animais e Adotantes estarem no ar para registrar uma solicitação. Cada serviço só precisa conhecer o endereço do Kafka | RF10, RNF04, RNF06 |
+| Réplicas locais (`replica_animais`, `replica_adotantes`) no `adocoes_db`, com só os campos necessários | A validação é feita no próprio banco, sem chamadas a outros serviços. Questionário, endereço e telefone continuam restritos ao serviço de Adotantes | RF10, RNF06, RNF10 |
+| Eventos com o estado completo do registro, tópicos compactados e republicação de todos os registros ao iniciar | Receber um evento repetido ou fora de ordem não corrompe a réplica, e ela pode ser reconstruída a qualquer momento | RNF06 |
 | Resumo do animal e do interessado copiado na solicitação (`resumoAnimal`, `resumoAdotante`) | Preserva o histórico do pedido e permite listar as solicitações no painel sem consultar os outros serviços a cada linha, inclusive com eles fora do ar | RF09, RF13 |
 | Data de nascimento armazenada em vez da idade | A idade é calculada a cada consulta e nunca fica desatualizada | RF06, RF07 |
 | A solicitação não altera a disponibilidade do animal | Sem etapa de aprovação nesta versão, só o administrador decide quando o animal deixa o catálogo | RF05, RF09 |
 | Área administrativa no próprio frontend, sem microsserviço extra | O painel usa as mesmas APIs do site. O login é apenas de interface (RF11), sem autenticação no backend nesta versão (ver 12.2 e E21) | RF11, RNF11 |
 | Docker Compose para todo o ambiente, com fuso `America/Sao_Paulo` nos containers | Todos os integrantes sobem o mesmo ambiente com um comando. O fuso evita que a regra dos 21 anos use o dia errado entre 21h e meia-noite (E06) | RNF02, RF07 |
+
+### 4.2 Comunicação por eventos (Kafka)
+
+Na primeira versão, o serviço de Adoções consultava as APIs de Animais e Adotantes por HTTP a cada solicitação. Isso criava um acoplamento em tempo de execução: com um desses serviços fora do ar, nenhuma solicitação podia ser registrada (resposta `503`). Por sugestão do professor, em 10/11/2026 a comunicação entre os serviços passou a usar o **Apache Kafka**.
+
+*Tabela 3a – Tópicos do Kafka.*
+
+| Tópico | Publica | Consome | Evento | Quando |
+|---|---|---|---|---|
+| `animais.eventos` | Animais | Adoções | `AnimalSalvo` | Cadastro, edição e mudança de disponibilidade; todos os animais ao iniciar |
+| `adotantes.eventos` | Adotantes | Adoções | `AdotanteSalvo` | Cadastro do questionário; todos os adotantes ao iniciar |
+| `adocoes.eventos` | Adoções | (disponível para outros serviços) | `SolicitacaoCriada`, `StatusAlterado` | Registro da solicitação e mudança de status no painel |
+
+O fluxo de uma solicitação passa a ser:
+
+1. O administrador cadastra um animal pelo painel. O serviço de Animais grava no `animais_db` e publica `AnimalSalvo` com o estado atual do animal.
+2. O interessado envia o questionário. O serviço de Adotantes grava no `adotantes_db` e publica `AdotanteSalvo`, só com nome, data de nascimento, cidade, UF e e-mail.
+3. O serviço de Adoções consome os dois tópicos e atualiza as réplicas no `adocoes_db`, ignorando eventos mais antigos do que o já salvo.
+4. No `POST /adocoes`, a validação usa as réplicas. A solicitação é gravada e o evento `SolicitacaoCriada` é publicado.
+
+O preço dessa independência é a **consistência eventual**: um animal recém-cadastrado leva alguns milissegundos para chegar à réplica, e nesse intervalo a solicitação responde `404`. O formato completo dos eventos está em `docs/contrato-api.md` (seção 4).
 
 ## 5. Infraestrutura e ambiente
 
@@ -161,6 +184,9 @@ O código está no repositório `github.com/Athurgomes/adotapet`, organizado em 
 | `animais` | `node:24-alpine` | 3001 | Microsserviço de Animais |
 | `adotantes` | `node:24-alpine` | 3002 | Microsserviço de Adotantes |
 | `adocoes` | `node:24-alpine` | 3003 | Microsserviço de Adoções |
+| `kafka` | `apache/kafka:4.1.0` | — (rede interna, 9092) | Broker Kafka em modo KRaft, sem Zookeeper, com um único nó |
+| `kafka-topicos` | `apache/kafka:4.1.0` | — | Cria os três tópicos e encerra; os serviços só sobem depois dele |
+| `kafka-ui` | `kafbat/kafka-ui` | 8080 | Interface para ver tópicos e mensagens. Opcional (perfil `kafka-ui`) |
 | `testes` | `node:24-alpine` | — | Testes de integração. Só roda sob demanda (perfil `testes`) |
 
 Os três serviços usam Express 5 e Mongoose 9. Cada um tem uma verificação de saúde (`GET /health`) que o Docker consulta a cada 15 segundos, e todos reiniciam sozinhos em caso de falha (`restart: unless-stopped`). Durante o desenvolvimento, a pasta `src/` de cada serviço é montada no container e o Node reinicia ao salvar um arquivo (`node --watch`).
@@ -175,14 +201,13 @@ Os três serviços usam Express 5 e Mongoose 9. Cada um tem uma verificação de
 | `DB_NAME` | todos | `animais_db`, `adotantes_db` ou `adocoes_db` |
 | `MONGODB_URI` | todos | Connection string do usuário do serviço, lida do arquivo `.env` (fora do Git) |
 | `TZ` | todos | `America/Sao_Paulo` |
-| `ANIMAIS_API_URL` | adocoes | `http://animais:3001` |
-| `ADOTANTES_API_URL` | adocoes | `http://adotantes:3002` |
+| `KAFKA_BROKERS` | todos | `kafka:9092` |
 
-Entre containers, cada serviço é encontrado pelo nome na rede do Docker (`http://animais:3001`). O navegador usa `localhost`, com os endereços definidos em `frontend/js/config.js`.
+Os serviços não precisam conhecer o endereço uns dos outros, só o do Kafka, encontrado pelo nome na rede do Docker. O navegador usa `localhost`, com os endereços definidos em `frontend/js/config.js`. Até a revisão de 10/11/2026, Adoções usava também `ANIMAIS_API_URL` e `ADOTANTES_API_URL`.
 
 ### 5.3 MongoDB Atlas
 
-O banco fica em um cluster gratuito (M0) no MongoDB Atlas chamado `adotapet`, com três bancos lógicos: `animais_db` (coleção `animais`), `adotantes_db` (`adotantes`) e `adocoes_db` (`solicitacoes`).
+O banco fica em um cluster gratuito (M0) no MongoDB Atlas chamado `adotapet`, com três bancos lógicos: `animais_db` (coleção `animais`), `adotantes_db` (`adotantes`) e `adocoes_db` (`solicitacoes`, `replica_animais` e `replica_adotantes`).
 
 *Tabela 6 – Usuários do MongoDB Atlas.*
 
@@ -193,6 +218,8 @@ O banco fica em um cluster gratuito (M0) no MongoDB Atlas chamado `adotapet`, co
 | `svc_adocoes` | Leitura e escrita em `adocoes_db` | Microsserviço de Adoções |
 | `exp_pessoa8` | Leitura e escrita nos 3 bancos | Experimentos da seção 10 |
 | `leitura_geral` | Somente leitura nos 3 bancos | Conferência dos dados no Compass |
+
+A permissão de cada usuário vale para o banco inteiro, e não para uma coleção específica: com a migração para o Kafka, o `svc_adocoes` precisou acessar as coleções de réplica criadas no `adocoes_db`.
 
 As senhas ficam apenas no arquivo `.env` e em um arquivo de credenciais distribuído ao grupo; os dois estão no `.gitignore`.
 
@@ -206,7 +233,7 @@ cd adotapet
 docker compose up -d --build
 ```
 
-O site fica em <http://localhost:5500>, o painel em <http://localhost:5500/admin/> e a saúde dos serviços em `http://localhost:300X/health`. Os testes de integração rodam com `docker compose run --rm testes` (seção 11).
+O site fica em <http://localhost:5500>, o painel em <http://localhost:5500/admin/> e a saúde dos serviços em `http://localhost:300X/health`. Com `docker compose --profile kafka-ui up -d`, a interface do Kafka fica em <http://localhost:8080>. Os testes de integração rodam com `docker compose run --rm testes` (seção 11).
 
 ## 6. Design da interface
 
@@ -281,7 +308,17 @@ Cada solicitação guarda `animalId`, `adotanteId`, `status` (`Pendente`, `Em co
 }
 ```
 
-Os ids são apenas referências: como cada serviço tem o próprio banco, não há `JOIN` nem chave estrangeira entre coleções, e a existência do animal e do interessado é conferida pela API no momento do pedido. Um **índice único parcial** em `{ animalId, adotanteId }`, aplicado só às solicitações com status `Pendente`, impede pedidos pendentes duplicados mesmo quando duas requisições chegam ao mesmo tempo.
+Os ids são apenas referências: como cada serviço tem o próprio banco, não há `JOIN` nem chave estrangeira entre coleções, e a existência do animal e do interessado é conferida nas réplicas (seção 7.4) no momento do pedido. Um **índice único parcial** em `{ animalId, adotanteId }`, aplicado só às solicitações com status `Pendente`, impede pedidos pendentes duplicados mesmo quando duas requisições chegam ao mesmo tempo.
+
+### 7.4 Réplicas (`adocoes_db.replica_animais` e `adocoes_db.replica_adotantes`)
+
+Mantidas pelo serviço de Adoções a partir dos eventos do Kafka. O `_id` é o mesmo id do serviço de origem, e `atualizadoEm` é a data da última alteração na origem, usada para não aplicar um evento antigo por cima de um novo. A idade não é armazenada: é calculada a partir de `dataNascimento` no momento da solicitação.
+
+```json
+{ "_id": "6ad994c668b5ceb2ebe62bc6", "nome": "Thor", "especie": "cachorro", "porte": "medio",
+  "cidade": "Goiânia", "uf": "GO", "imagemUrl": "https://...", "disponivel": true,
+  "atualizadoEm": "2026-11-10T14:30:00.000Z" }
+```
 
 ## 8. Microsserviços
 
@@ -334,21 +371,21 @@ Os três serviços seguem o mesmo padrão: JSON em todas as respostas, erros no 
 | `GET` | `/adocoes/:id` | Consultar uma solicitação | 200 | 400, 404 |
 | `PATCH` | `/adocoes/:id/status` | Alterar o andamento no painel | 200 | 400, 404 |
 
-O `POST /adocoes` recebe apenas `animalId` e `adotanteId` e segue as etapas da Tabela 11. Cada consulta aos outros serviços tem tempo limite de 3 segundos.
+O `POST /adocoes` recebe apenas `animalId` e `adotanteId` e segue as etapas da Tabela 11. Nenhuma etapa chama os outros serviços: os dados vêm das réplicas (seção 7.4).
 
 *Tabela 11 – Validação de uma solicitação de adoção.*
 
 | Etapa | Verificação | Resposta se falhar |
 |---|---|---|
 | 1 | Os dois ids estão no formato do MongoDB (24 caracteres hexadecimais) | `400` |
-| 2 | `GET /animais/:id` no serviço de Animais: o animal existe | `404` (ou `503` se o serviço não responder) |
+| 2 | O animal está na réplica `replica_animais` | `404` "Animal não encontrado." (ou `503` se a réplica estiver incompleta) |
 | 3 | O animal está disponível | `409` "Animal indisponível para adoção." |
-| 4 | `GET /adotantes/:id` no serviço de Adotantes: o interessado existe | `404` (ou `503`) |
+| 4 | O interessado está na réplica `replica_adotantes` | `404` "Adotante não encontrado." (ou `503`) |
 | 5 | O interessado tem 21 anos ou mais | `422` "Idade mínima para adoção é 21 anos." |
 | 6 | Não há outra solicitação pendente do mesmo interessado para o mesmo animal | `409` |
-| 7 | Grava a solicitação com status `Pendente` e os resumos | `201` |
+| 7 | Grava a solicitação com status `Pendente` e os resumos e publica `SolicitacaoCriada` | `201` |
 
-Respostas inesperadas dos outros serviços (por exemplo, `503` porque o banco deles caiu, ou um corpo sem os campos esperados) também resultam em `503`. Assim, o site consegue distinguir "dados inválidos" de "serviço indisponível". A rota `/health` de Adoções informa, além do próprio banco, se Animais e Adotantes estão no ar.
+Como a validação não depende dos outros serviços, a solicitação é registrada mesmo com Animais ou Adotantes fora do ar. O `503` fica restrito aos casos em que o próprio banco de Adoções está indisponível ou a réplica tem dados incompletos. A rota `/health` de Adoções informa o estado do banco, do Kafka e quantos registros há em cada réplica. Até a revisão de 10/11/2026, ela informava se Animais e Adotantes estavam no ar.
 
 ## 9. Frontend
 
@@ -476,11 +513,11 @@ O script `tests/integracao.js` executa o fluxo completo (cadastro de animal → 
 
 | Frente | Casos | Quantidade | O que verifica |
 |---|---|---|---|
-| Ambiente (automatizado) | CT01–CT05 | 5 | Serviços no ar e conectados, comunicação entre eles, CORS, rota inexistente e JSON malformado |
+| Ambiente (automatizado) | CT01–CT05 | 5 | Serviços no ar e conectados ao banco e ao Kafka, CORS, rota inexistente e JSON malformado |
 | Animais (automatizado) | CT10–CT23 | 14 | Cadastro com estruturas diferentes, consulta, filtros, disponibilidade, edição e validações |
 | Adotantes (automatizado) | CT30–CT38 | 9 | Questionário, idade calculada, e-mail repetido, busca por e-mail e validações |
-| Adoções (automatizado) | CT40–CT53 | 14 | Solicitação válida, resumos, duplicidade, idade mínima, animal indisponível, registros inexistentes, alteração de status e privacidade do catálogo |
-| Serviço fora do ar | CQ01–CQ04 | 4 | Adoções detecta a queda, responde `503` e os demais serviços seguem respondendo |
+| Adoções (automatizado) | CT39–CT54 | 16 | Propagação dos eventos para as réplicas, solicitação válida, resumos, duplicidade, idade mínima, animal indisponível, registros inexistentes, alteração de status e privacidade do catálogo |
+| Serviço fora do ar | CQ01–CQ03 | 3 | Com Animais ou Adotantes parado, a solicitação continua sendo registrada (`201`) e os demais serviços seguem respondendo (até 22/10, com HTTP: CQ01–CQ04, esperando `503`) |
 | Site público (manual) | CF01–CF13 | 11 | Catálogo, filtros, questionário, mensagens de erro, responsividade e privacidade |
 | Painel (manual) | CF03, CF07, CF14–CF18 | 7 | Login, cadastro, edição, disponibilidade e lista de solicitações |
 | Infraestrutura e banco (manual) | CM01–CM07 | 7 | Containers, `/health`, bancos e usuários do Atlas, persistência e tecnologias |
@@ -496,6 +533,17 @@ Na execução de 22/10/2026, com a `main` após as correções, **os 42 casos au
 | Fluxo completo | 42 | 0 | 0 | `evidencias/testes/integracao-20261022-042316.md` |
 | Animais fora do ar | 3 | 0 | 1 (esperado) | `evidencias/testes/queda-animais-20261022-042329.md` |
 | Adotantes fora do ar | 3 | 0 | 1 (esperado) | `evidencias/testes/queda-adotantes-20261022-042338.md` |
+
+Depois da migração para o Kafka, os testes foram reexecutados em 10/11/2026. O fluxo completo passou a ter 44 casos, com o CT39 (propagação dos eventos) e o CT54 (preparação do teste de queda), e todos passaram. Com o serviço de Animais parado, os 3 casos de queda passaram, incluindo o registro da solicitação (`201`).
+
+*Tabela 14a – Resultado dos testes automatizados após a migração para o Kafka (10/11/2026).*
+
+| Execução | Passou | Falhou | Bloqueado | Evidência |
+|---|---|---|---|---|
+| Fluxo completo | 44 | 0 | 0 | `evidencias/testes/integracao-20261111-003011.md` |
+| Animais fora do ar | 3 | 0 | 0 | `evidencias/testes/queda-animais-20261111-003017.md` |
+
+O serviço de Adoções também ganhou 10 testes unitários (`npm test` em `services/adocoes`), que cobrem a regra de idade, a disponibilidade e a aplicação dos eventos nas réplicas sem precisar de banco nem de Kafka.
 
 No navegador, foram reexecutados em 22/10 os casos CF01, CF02, CF05, CF06, CF09 (idade mínima), CF10, CF11, CF12, CF13, CF14, CF03, CF16, CF07, CF17 e CF18, todos com o resultado esperado. A recusa de animal indisponível (`409`) foi verificada pela API (CT47): no site, animais indisponíveis nem aparecem para seleção.
 
@@ -528,7 +576,9 @@ Em 22/10 também foi encontrado e corrigido um deslocamento horizontal da tela d
 
 ### 11.4 Demonstração da independência dos serviços
 
-Com o serviço de Animais parado (`docker compose stop animais`), a rota `/health` do serviço de Adoções passou a informar `"animais": "fora do ar"` e `"adotantes": "no ar"` (Figura 19). Ao enviar um formulário pelo site, o questionário foi gravado normalmente pelo serviço de Adotantes, mas o serviço de Adoções respondeu `503` depois do tempo limite de 3 segundos, e o site mostrou a mensagem de serviço indisponível, sem a tela de sucesso (Figura 20). O painel continuou listando as solicitações, porque elas guardam o resumo do animal. Com `docker compose start animais`, o catálogo voltou em cerca de 10 segundos, tempo da reconexão com o Atlas.
+**Com o Kafka (a partir de 10/11/2026).** Com o serviço de Animais parado (`docker compose stop animais`), o serviço de Adoções continuou registrando solicitações (`201`), com os dados do animal vindos da réplica (caso CQ02, `evidencias/testes/queda-animais-20261111-003017.md`). Ao religar o serviço de Animais, ele republica todos os animais e as réplicas continuam completas. Pela interface do Kafka (<http://localhost:8080>) é possível acompanhar os eventos chegando a cada cadastro.
+
+**Com HTTP (versão de 22/10/2026, registrada para comparação).** Com o serviço de Animais parado (`docker compose stop animais`), a rota `/health` do serviço de Adoções passou a informar `"animais": "fora do ar"` e `"adotantes": "no ar"` (Figura 19). Ao enviar um formulário pelo site, o questionário foi gravado normalmente pelo serviço de Adotantes, mas o serviço de Adoções respondeu `503` depois do tempo limite de 3 segundos, e o site mostrou a mensagem de serviço indisponível, sem a tela de sucesso (Figura 20). O painel continuou listando as solicitações, porque elas guardam o resumo do animal. Com `docker compose start animais`, o catálogo voltou em cerca de 10 segundos, tempo da reconexão com o Atlas.
 
 ![Figura 19 – Health de Adoções com Animais fora do ar](evidencias/EV15-health-animais-fora-do-ar.jpg)
 
@@ -544,7 +594,7 @@ Com o serviço de Animais parado (`docker compose stop animais`), a rota `/healt
 
 ### 12.1 Resultados
 
-O Aumigo atingiu o objetivo de reunir, em uma única plataforma, a divulgação de animais para adoção e o envio de solicitações por pessoas interessadas. Os requisitos RF01 a RF13 foram implementados e testados, com a ressalva da consulta de animal (RF04), que no site se limita às informações do card. A arquitetura com três microsserviços independentes, cada um com o próprio banco no MongoDB Atlas, funcionou como planejado: os serviços se comunicam apenas por HTTP, e a queda de um deles não derruba os outros.
+O Aumigo atingiu o objetivo de reunir, em uma única plataforma, a divulgação de animais para adoção e o envio de solicitações por pessoas interessadas. Os requisitos RF01 a RF13 foram implementados e testados, com a ressalva da consulta de animal (RF04), que no site se limita às informações do card. A arquitetura com três microsserviços independentes, cada um com o próprio banco no MongoDB Atlas, funcionou como planejado: depois da revisão de 10/11/2026, os serviços se comunicam apenas por eventos no Kafka, e a queda de Animais ou de Adotantes não impede mais o registro de solicitações.
 
 O MongoDB se mostrou adequado aos dados do projeto, em especial às características que variam por espécie e aos questionários e resumos incorporados aos documentos. Os testes de integração tiveram papel central: encontraram 23 problemas antes da entrega, vários deles visíveis apenas ao testar o fluxo completo pela interface.
 
@@ -552,7 +602,8 @@ O MongoDB se mostrou adequado aos dados do projeto, em especial às característ
 
 - **Autenticação:** o login do painel é apenas de interface; a senha de demonstração fica no código do frontend e as APIs não exigem login (E21). Uma versão real precisaria de autenticação no backend, por exemplo com tokens.
 - **Página de detalhes do animal:** o site não mostra as características completas e o histórico de vacinas.
-- **Aprovação e recusa de solicitações:** o andamento no painel é apenas informativo; um fluxo de aprovação poderia, ao concluir uma adoção, tornar o animal indisponível automaticamente.
+- **Aprovação e recusa de solicitações:** o andamento no painel é apenas informativo. Como Adoções já publica `StatusAlterado` no Kafka, o serviço de Animais poderia consumir esse evento e tornar o animal indisponível automaticamente ao concluir uma adoção.
+- **Consistência eventual e Kafka de um nó:** um registro recém-criado leva alguns milissegundos para chegar à réplica, e o Kafka roda com um único broker, sem replicação. Em produção, seriam necessários pelo menos três brokers.
 - **Upload de imagens:** hoje a foto é informada por URL.
 - **Isolamento físico dos bancos:** os três bancos estão no mesmo cluster gratuito do Atlas; em produção, cada serviço poderia ter um cluster próprio, eliminando esse ponto único de falha.
 - **Banco separado para testes:** os testes automatizados gravam dados no mesmo banco usado pelo site, o que exige limpeza antes de demonstrações.
