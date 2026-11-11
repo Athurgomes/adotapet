@@ -121,9 +121,9 @@ async function aguardarPropagacao() {
   await pausa(ESPERA_PROPAGACAO_MS);
 }
 
-// Solicita a adoção repetindo enquanto a réplica ainda não recebeu o animal ou o
-// adotante (404). Usado só nos casos em que o esperado é 201.
-async function solicitarComEspera(corpo, tentativas = 20) {
+// Solicita a adoção repetindo (até 10 segundos) enquanto a réplica ainda não recebeu
+// o animal ou o adotante (404). Usado só nos casos em que o esperado é 201.
+async function solicitarComEspera(corpo, tentativas = 40) {
   let r;
   for (let i = 0; i < tentativas; i += 1) {
     r = await chamar('adocoes', 'POST', '/adocoes', corpo);
@@ -284,15 +284,23 @@ const ctx = {};
 
 function casosAmbiente() {
   caso('CT01', 'Os 3 serviços estão no ar e conectados ao banco', ['RNF02', 'RNF05'], async () => {
-    const problemas = [];
-    for (const servico of Object.keys(URLS)) {
-      try {
-        const r = await chamar(servico, 'GET', '/health');
-        if (r.status !== 200) problemas.push(`${servico}: HTTP ${r.status}`);
-        else if (r.dados?.banco !== 'conectado') problemas.push(`${servico}: banco "${r.dados?.banco}"`);
-      } catch (erro) {
-        problemas.push(erro.message);
+    // Logo depois de um "docker compose up" ou "restart" os serviços ainda estão
+    // conectando ao Atlas e ao Kafka: espera até 60 segundos antes de reprovar.
+    let problemas = [];
+    for (let tentativa = 0; tentativa < 30; tentativa += 1) {
+      problemas = [];
+      for (const servico of Object.keys(URLS)) {
+        try {
+          const r = await chamar(servico, 'GET', '/health');
+          if (r.status !== 200) problemas.push(`${servico}: HTTP ${r.status}`);
+          else if (r.dados?.banco !== 'conectado') problemas.push(`${servico}: banco "${r.dados?.banco}"`);
+          else if (r.dados?.kafka !== 'conectado') problemas.push(`${servico}: kafka "${r.dados?.kafka}"`);
+        } catch (erro) {
+          problemas.push(erro.message);
+        }
       }
+      if (problemas.length === 0) break;
+      await pausa(2000);
     }
     verificar(problemas.length === 0, problemas.join('; '));
   });
@@ -733,7 +741,12 @@ function casosQueda() {
       ctx.parados.length > 0,
       'nenhum serviço parado. Antes de usar --queda, rode "docker compose stop animais" (ou adotantes)'
     );
-    const r = await chamar('adocoes', 'GET', '/health');
+    let r;
+    for (let tentativa = 0; tentativa < 15; tentativa += 1) {
+      r = await chamar('adocoes', 'GET', '/health');
+      if (r.dados?.kafka === 'conectado') break;
+      await pausa(2000);
+    }
     esperarStatus(r, 200, 'GET /health de Adoções');
     verificar(r.dados?.kafka === 'conectado', `Adoções está com o Kafka "${r.dados?.kafka}"`);
   });
