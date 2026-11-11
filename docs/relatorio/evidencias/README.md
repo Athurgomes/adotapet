@@ -52,7 +52,7 @@
 |---|---|---|---|---|---|
 | EV30 | Fluxo completo com Kafka: 44 de 44 | `docker compose run --rm testes` | 11.2 | CT01–CT54 | [x] `testes/integracao-20261111-003011.md` |
 | EV31 | Animais parado e a solicitação registrada (`201`) | `docker compose stop animais` + `docker compose run --rm testes --queda` | 11.4 | CQ01–CQ03 | [x] `testes/queda-animais-20261111-003017.md` |
-| EV32 | Mensagens nos tópicos do Kafka | Kafka UI em <http://localhost:8080> após cadastrar um animal | 4.2 | CM08 | [ ] |
-| EV33 | `/health` de Adoções com `kafka` e `replicas` | <http://localhost:3003/health> | 8.3 | CT02 | [ ] |
+| EV32 | Mensagens nos tópicos do Kafka | Kafka UI em <http://localhost:8080> após cadastrar um animal | 11.4 | CM08 | [x] `EV32-kafka-ui-topicos.jpg` e `EV32a-kafka-ui-mensagem.jpg` |
+| EV33 | `/health` de Adoções com `kafka` e `replicas` | <http://localhost:3003/health> | 11.4 | CT02 | [x] `EV33-health-adocoes-kafka.jpg` |
 
 > EV15 e EV16 mostram o comportamento da versão com HTTP (22/10): `/health` com `dependencias` e mensagem `503` no site. Com o Kafka, a solicitação é registrada mesmo com Animais fora do ar.
